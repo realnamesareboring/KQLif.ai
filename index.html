@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KQL Security Training Platform</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+</head>
+<body>
+    <header class="header">
+        <div class="header-left">
+            <button class="hamburger" onclick="toggleSidebar()">☰</button>
+            <h1>KQL Security Training Platform</h1>
+        </div>
+        <div class="rank-system">
+            <div class="rank-info">
+                <div class="rank-title">Cyber Detective</div>
+                <div class="rank-subtitle">Security Analyst</div>
+            </div>
+            <div class="xp-progress">
+                <div class="xp-bar">
+                    <div class="xp-fill"></div>
+                </div>
+                <div class="xp-text">750 / 2000 XP</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-title">Training Modules</div>
+            <div class="sidebar-subtitle">Choose your learning path</div>
+        </div>
+
+        <!-- Microsoft 365 Security -->
+        <div class="platform-section">
+            <div class="platform-header" onclick="togglePlatform('microsoft365')">
+                <span><span class="platform-icon">🛡️</span>Microsoft 365 Security</span>
+                <span class="expand-icon" id="expand-microsoft365">▼</span>
+            </div>
+            <div class="attack-paths" id="paths-microsoft365">
+                <div class="attack-path" onclick="selectScenario('password-spray')">
+                    <span>Password Spray Attacks</span>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('brute-force')">
+                    <span>Brute Force Attacks</span>
+                    <span class="difficulty-badge difficulty-beginner">Beginner</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('account-takeover')">
+                    <span>Account Takeover & Persistence</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('mfa-bypass')">
+                    <span>MFA Bypass & Fatigue</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('legacy-auth')">
+                    <span>Legacy Authentication Abuse</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('phishing-bec')">
+                    <span>Phishing & BEC</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Azure Platform -->
+        <div class="platform-section">
+            <div class="platform-header" onclick="togglePlatform('azure')">
+                <span><span class="platform-icon">☁️</span>Azure Platform</span>
+                <span class="expand-icon" id="expand-azure">▼</span>
+            </div>
+            <div class="attack-paths" id="paths-azure">
+                <div class="attack-path" onclick="selectScenario('azure-storage-misc')">
+                    <span>Storage Misconfigurations</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('azure-ransomware')">
+                    <span>Storage Ransomware</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('aks-compromise')">
+                    <span>AKS Cluster Compromise</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('cspm-violations')">
+                    <span>CSPM Violations</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- AWS Platform -->
+        <div class="platform-section">
+            <div class="platform-header" onclick="togglePlatform('aws')">
+                <span><span class="platform-icon">🏗️</span>AWS Platform</span>
+                <span class="expand-icon" id="expand-aws">▼</span>
+            </div>
+            <div class="attack-paths" id="paths-aws">
+                <div class="attack-path" onclick="selectScenario('s3-misconfiguration')">
+                    <span>S3 Bucket Misconfigurations</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('s3-ransomware')">
+                    <span>S3 Ransomware via SSE-C</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('iam-compromise')">
+                    <span>IAM Credential Compromise</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('supply-chain')">
+                    <span>S3 Supply Chain Attacks</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kubernetes & Containers -->
+        <div class="platform-section">
+            <div class="platform-header" onclick="togglePlatform('kubernetes')">
+                <span><span class="platform-icon">🚢</span>Kubernetes & Containers</span>
+                <span class="expand-icon" id="expand-kubernetes">▼</span>
+            </div>
+            <div class="attack-paths" id="paths-kubernetes">
+                <div class="attack-path" onclick="selectScenario('k8s-api-compromise')">
+                    <span>API Server Compromise</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('container-runtime')">
+                    <span>Container Runtime Attacks</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('k8s-misconfiguration')">
+                    <span>Kubernetes Misconfigurations</span>
+                    <span class="difficulty-badge difficulty-intermediate">Intermediate</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('network-policy')">
+                    <span>Network Policy Violations</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-Cloud -->
+        <div class="platform-section">
+            <div class="platform-header" onclick="togglePlatform('multicloud')">
+                <span><span class="platform-icon">🌐</span>Multi-Cloud & Hybrid</span>
+                <span class="expand-icon" id="expand-multicloud">▼</span>
+            </div>
+            <div class="attack-paths" id="paths-multicloud">
+                <div class="attack-path" onclick="selectScenario('credential-reuse')">
+                    <span>Multi-Cloud Credential Reuse</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('supply-chain-compromise')">
+                    <span>Supply Chain Compromise</span>
+                    <span class="difficulty-badge difficulty-expert">Expert</span>
+                </div>
+                <div class="attack-path" onclick="selectScenario('hybrid-identity')">
+                    <span>Hybrid Identity Bridge Attacks</span>
+                    <span class="difficulty-badge difficulty-advanced">Advanced</span>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="content-container">
+            <!-- Overview Panel (Default) -->
+            <div class="overview-panel" id="overview-panel">
+                <h1 class="overview-title">Welcome to KQL Security Training</h1>
+                <p class="overview-subtitle">Master threat detection and investigation across Microsoft 365, Azure, AWS, and Kubernetes environments through hands-on KQL queries and real-world scenarios.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-number">43</span>
+                        <div class="stat-label">Training Scenarios</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">5</span>
+                        <div class="stat-label">Cloud Platforms</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">3</span>
+                        <div class="stat-label">Completed</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">750</span>
+                        <div class="stat-label">XP Earned</div>
+                    </div>
+                </div>
+
+                <div class="platforms-overview">
+                    <h2 class="platforms-title">Available Training Platforms</h2>
+                    <div class="platform-cards">
+                        <div class="platform-card" onclick="expandPlatform('microsoft365')">
+                            <span class="platform-card-icon">🛡️</span>
+                            <div class="platform-card-title">Microsoft 365 Security</div>
+                            <div class="platform-card-desc">Learn identity protection, email security, and endpoint defense with Entra ID, Defender for Office 365, and more.</div>
+                        </div>
+                        <div class="platform-card" onclick="expandPlatform('azure')">
+                            <span class="platform-card-icon">☁️</span>
+                            <div class="platform-card-title">Azure Platform</div>
+                            <div class="platform-card-desc">Master cloud security posture management, storage protection, and Azure Kubernetes Service security.</div>
+                        </div>
+                        <div class="platform-card" onclick="expandPlatform('aws')">
+                            <span class="platform-card-icon">🏗️</span>
+                            <div class="platform-card-title">AWS Platform</div>
+                            <div class="platform-card-desc">Investigate IAM compromises, S3 security issues, and advanced ransomware techniques targeting AWS services.</div>
+                        </div>
+                        <div class="platform-card" onclick="expandPlatform('kubernetes')">
+                            <span class="platform-card-icon">🚢</span>
+                            <div class="platform-card-title">Kubernetes & Containers</div>
+                            <div class="platform-card-desc">Secure container orchestration with API server protection, runtime security, and network policy enforcement.</div>
+                        </div>
+                        <div class="platform-card" onclick="expandPlatform('multicloud')">
+                            <span class="platform-card-icon">🌐</span>
+                            <div class="platform-card-title">Multi-Cloud & Hybrid</div>
+                            <div class="platform-card-desc">Advanced cross-platform investigations and hybrid environment security analysis.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="getting-started">
+                    <h3>🚀 Getting Started</h3>
+                    <ol>
+                        <li>Click the <strong>hamburger menu (☰)</strong> to browse training scenarios</li>
+                        <li>Choose a platform that matches your experience level</li>
+                        <li>Start with <strong>Beginner</strong> scenarios to build foundational KQL skills</li>
+                        <li>Practice writing queries in the interactive KQL workspace</li>
+                        <li>Earn XP and advance your rank as you complete challenges</li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- Challenge Panel (Hidden by default) -->
+            <div class="challenge-panel" id="challenge-panel">
+                <div class="scenario-header">
+                    <div class="scenario-title" id="scenario-title">Password Spray Attack Detection</div>
+                    <div class="scenario-meta">
+                        <div class="meta-item">
+                            <span>🎯</span>
+                            <span id="scenario-platform">Microsoft Entra ID</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>📊</span>
+                            <span id="scenario-difficulty">Beginner - Intermediate</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>⏱️</span>
+                            <span id="scenario-duration">15-20 minutes</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>🏆</span>
+                            <span id="scenario-points">250 XP</span>
+                        </div>
+                    </div>
+                    <div class="scenario-description" id="scenario-description">
+                        <strong>Scenario:</strong> A Security Operations Center has detected unusual authentication patterns across multiple user accounts. 
+                        Your task is to identify a potential password spray attack using KQL queries against Microsoft Entra ID sign-in logs. 
+                        <br><br>
+                        <strong>Learning Objectives:</strong> Master aggregation functions, time windows, IP address analysis, and user behavior correlation.
+                        <br><br>
+                        <strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID
+                    </div>
+                </div>
+
+                <div class="hint-panel" id="hint-panel">
+                    <div class="hint-title">
+                        <span>💡</span>
+                        <span>Hint</span>
+                    </div>
+                    <div id="hint-content">
+                        Start by filtering the SigninLogs table for failed authentication attempts (ResultType != 0). 
+                        Then group by source IP address and count the number of unique users targeted.
+                    </div>
+                </div>
+
+                <!-- Raw Data Logs Panel -->
+                <div class="raw-logs-panel" id="raw-logs-panel">
+                    <div class="logs-header">
+                        <h3 style="color: #2c5aa0; margin-bottom: 1rem; font-weight: 600;">📋 SigninLogs Table - Raw Data (Last 24 Hours)</h3>
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 1.5rem;">Review the authentication logs below. Look for patterns that might indicate a password spray attack.</p>
+                    </div>
+                    <div class="logs-container">
+                        <div class="logs-table-container">
+                            <table class="logs-table">
+                                <thead>
+                                    <tr>
+                                        <th>TimeGenerated</th>
+                                        <th>UserPrincipalName</th>
+                                        <th>IPAddress</th>
+                                        <th>Location</th>
+                                        <th>ResultType</th>
+                                        <th>AppDisplayName</th>
+                                        <th>ClientAppUsed</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="raw-logs-tbody">
+                                    <!-- Raw log data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kql-workspace">
+                    <div class="kql-toolbar">
+                        <div class="kql-toolbar-left">
+                            <h3 style="color: #2c5aa0; margin: 0; font-weight: 600;">🔍 KQL Query Editor</h3>
+                            <span style="color: #666; font-size: 0.9rem;">Write your query to analyze the authentication logs above</span>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
+                            <button class="btn btn-secondary" onclick="toggleHint()">💡 Hint</button>
+                        </div>
+                    </div>
+                    
+                    <div class="kql-editor">
+                        <div class="line-numbers" id="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
+                        <textarea class="query-editor" id="query-editor" placeholder="// Write your KQL query here
+// Example: SigninLogs | where TimeGenerated > ago(24h)
+
+SigninLogs
+| where TimeGenerated > ago(24h)
+| where ResultType != 0  // Failed logins only
+| summarize 
+    UniqueUsers = dcount(UserPrincipalName),
+    FailedAttempts = count()
+    by IPAddress
+| where UniqueUsers >= 5  // Potential spray threshold
+| order by UniqueUsers desc"></textarea>
+                    </div>
+                </div>
+
+                <div class="results-workspace" id="results-workspace" style="display: none;">
+                    <div class="results-header">
+                        <h3 style="color: #2c5aa0; margin: 0; font-weight: 600;">📊 Query Results</h3>
+                        <span id="result-count">Ready to execute query...</span>
+                    </div>
+                    <div class="results-content" id="results-content">
+                        Click "Run Query" to execute your KQL and see the results. The system will analyze your approach and provide feedback!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Link to JavaScript file -->
+    <script src="assets/js/script.js"></script>
+</body>
+</html>
