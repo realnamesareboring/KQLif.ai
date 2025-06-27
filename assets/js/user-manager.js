@@ -81,7 +81,7 @@ class UserManager {
         // Save user data
         localStorage.setItem('kql_user_name', userName);
         localStorage.setItem('kql_user_xp', '0');
-        localStorage.setItem('kql_scenarios_completed', '0');
+        localStorage.setItem('kql_scenarios_completed', JSON.stringify([]));
         localStorage.setItem('kql_user_created', new Date().toISOString());
 
         // Remove modal
@@ -226,14 +226,25 @@ class UserManager {
     }
 
     completeScenario(scenarioName, xpReward) {
+        console.log('🎓 completeScenario called:', scenarioName, 'XP:', xpReward);
+        
         // Mark scenario as completed
         const completed = this.getCompletedScenarios();
+        console.log('Current completed scenarios:', completed);
+        
         if (!completed.includes(scenarioName)) {
+            console.log('✅ New scenario completion detected');
             completed.push(scenarioName);
             localStorage.setItem('kql_scenarios_completed', JSON.stringify(completed));
             
             // Award XP
+            console.log('🏆 Awarding XP...');
             this.addXP(xpReward, scenarioName);
+            
+            // 🎯 ADD THIS LINE
+            markScenarioCompleted(scenarioName);
+        } else {
+            console.log('⚠️ Scenario already completed, no XP awarded');
         }
     }
 

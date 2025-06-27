@@ -154,7 +154,8 @@
                 platform: 'Microsoft Entra ID',
                 difficulty: 'Beginner - Intermediate',
                 duration: '15-20 minutes',
-                points: '250 XP',
+                points: 250,
+                xpReward: 250,
                 description: `<strong>Scenario:</strong> A Security Operations Center has detected unusual authentication patterns across multiple user accounts. 
                 Your task is to identify a potential password spray attack using KQL queries against Microsoft Entra ID sign-in logs. 
                 <br><br>
@@ -382,6 +383,33 @@
                             </div>
                         `;
                         resultCount.textContent = `${results.length} suspicious IP(s) found • Query completed in 1.8s`;
+                        resultCount.textContent = `${results.length} suspicious IP(s) found • Query completed in 1.8s`;
+                    
+                    // 🔍 ADD THIS ENTIRE SECTION HERE
+                    console.log('=== XP DEBUG INFO ===');
+                    console.log('Selected scenario:', selectedScenario);
+                    console.log('Scenario data:', scenarios[selectedScenario]);
+                    console.log('XP Reward available:', scenarios[selectedScenario]?.xpReward);
+                    console.log('UserManager exists:', !!window.userManager);
+                    if (window.userManager) {
+                        console.log('Current user XP before:', window.userManager.getUserXP());
+                        console.log('Completed scenarios before:', window.userManager.getCompletedScenarios());
+                    }
+                    // Award XP for successful completion
+                    if (window.userManager && scenarios[selectedScenario]?.xpReward) {
+                        console.log('🎯 Attempting to award XP...');
+                        userManager.completeScenario(selectedScenario, scenarios[selectedScenario].xpReward);
+                        
+                        // Check after
+                        if (window.userManager) {
+                            console.log('Current user XP after:', window.userManager.getUserXP());
+                            console.log('Completed scenarios after:', window.userManager.getCompletedScenarios());
+                        }
+                    } else {
+                        console.log('❌ XP award failed - Missing UserManager or xpReward');
+                    }
+                    console.log('=== END XP DEBUG ===');
+                    // 🔍 END OF ADDED SECTION
                     } else {
                         resultsContent.innerHTML = `
                             <div style="color: #2c5aa0; background: #f0f4f8; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #2c5aa0;">
@@ -432,9 +460,44 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             updateLineNumbers();
-            // Load password spray scenario by default for demo
-            if (!selectedScenario) {
-                selectedScenario = 'password-spray';
-                loadScenario('password-spray');
-            }
+            
+            // Wait for user manager to initialize, then update progress
+            setTimeout(() => {
+                updateSidebarProgress();
+                
+                if (!selectedScenario) {
+                    selectedScenario = 'password-spray';
+                    loadScenario('password-spray');
+                }
+            }, 200);
         });
+// Update sidebar to show completed scenarios
+function updateSidebarProgress() {
+    if (!window.userManager) return;
+    
+    const completedScenarios = userManager.getCompletedScenarios();
+    console.log('Updating sidebar progress for:', completedScenarios);
+    
+    // Remove all existing completion indicators
+    document.querySelectorAll('.attack-path').forEach(path => {
+        path.classList.remove('completed');
+    });
+    
+    // Add completion indicators for completed scenarios
+    completedScenarios.forEach(scenarioId => {
+        const scenarioElement = document.querySelector(`[onclick="selectScenario('${scenarioId}')"]`);
+        if (scenarioElement) {
+            scenarioElement.classList.add('completed');
+            console.log(`Marked ${scenarioId} as completed`);
+        }
+    });
+}
+
+// Mark a specific scenario as completed in the UI
+function markScenarioCompleted(scenarioId) {
+    const scenarioElement = document.querySelector(`[onclick="selectScenario('${scenarioId}')"]`);
+    if (scenarioElement) {
+        scenarioElement.classList.add('completed');
+        console.log(`Marked ${scenarioId} as completed in UI`);
+    }
+}

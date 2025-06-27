@@ -199,6 +199,33 @@ body {
     transition: max-height 0.3s ease;
 }
 
+/* Progress completion */
+.attack-path.completed {
+    background-color: #f1f8e9 !important;
+    opacity: 0.8;
+    position: relative;
+}
+
+.attack-path.completed::before {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.9rem;
+    z-index: 1;
+}
+
+.attack-path.completed .attack-path-title {
+    text-decoration: line-through;
+    color: #4caf50 !important;
+    font-weight: 600;
+}
+
+.attack-path.completed:hover {
+    background-color: #e8f5e8 !important;
+    padding-left: 3.5rem;
+}
+
 .attack-paths.expanded {
     max-height: 600px;
 }
