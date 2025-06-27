@@ -355,72 +355,104 @@ class UserManager {
         setTimeout(() => modal.classList.add('show'), 100);
     }
 
-    // Show recovery system modal
-    showRecoveryModal() {
-        const modal = document.createElement('div');
-        modal.className = 'welcome-modal-overlay';
-        modal.innerHTML = `
-            <div class="welcome-modal" style="max-width: 600px;">
-                <div class="welcome-header">
-                    <h2>🔐 Progress Recovery & Verification</h2>
-                    <p>Backup, restore, and verify your training progress</p>
+// Show recovery system modal - FIXED VERSION
+showRecoveryModal() {
+    const modal = document.createElement('div');
+    modal.className = 'welcome-modal-overlay';
+    modal.id = 'recovery-modal-overlay'; // Add ID for easy targeting
+    modal.innerHTML = `
+        <div class="welcome-modal" style="max-width: 600px;">
+            <div class="welcome-header">
+                <h2>🔐 Progress Recovery & Verification</h2>
+                <p>Backup, restore, and verify your training progress</p>
+            </div>
+            <div class="welcome-content">
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">🏆 Generate Certificate</h4>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Create a printable certificate of your achievements</p>
+                    <button class="btn btn-primary" onclick="userManager.generateAndShowCertificate()">🖨️ Generate Certificate</button>
                 </div>
-                <div class="welcome-content">
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                        <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">🏆 Generate Certificate</h4>
-                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Create a printable certificate of your achievements</p>
-                        <button class="btn btn-primary" onclick="userManager.generateAndShowCertificate()">🖨️ Generate Certificate</button>
-                    </div>
-                    
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-                        <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">💾 Master Recovery Code</h4>
-                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Backup all your progress with a single code</p>
-                        <button class="btn btn-secondary" onclick="userManager.showMasterCode()">🔑 Generate Backup Code</button>
-                    </div>
-                    
-                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
-                        <h4 style="color: #856404; margin-bottom: 0.5rem;">🎯 Enter Completion Code</h4>
-                        <p style="font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">Unlock scenarios with completion codes</p>
-                        <input type="text" id="completion-code" placeholder="PWS-7K4M-ABCD" style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                        <button class="btn btn-primary" onclick="userManager.validateCodeFromModal()">🔓 Unlock Scenario</button>
-                        <div id="validation-result" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
-                    </div>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">💾 Master Recovery Code</h4>
+                    <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Backup all your progress with a single code</p>
+                    <button class="btn btn-secondary" onclick="userManager.showMasterCode()">🔑 Generate Backup Code</button>
                 </div>
-                <div class="welcome-actions">
-                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
+                
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <h4 style="color: #856404; margin-bottom: 0.5rem;">🎯 Enter Completion Code</h4>
+                    <p style="font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">Unlock scenarios with completion codes</p>
+                    <input type="text" id="completion-code" placeholder="PWS-7K4M-ABCD" style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <button class="btn btn-primary" onclick="userManager.validateCodeFromModal()">🔓 Unlock Scenario</button>
+                    <div id="validation-result" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
                 </div>
             </div>
-        `;
-        document.body.appendChild(modal);
-        modal.style.display = 'flex';
-    }
+            <div class="welcome-actions">
+                <button class="btn btn-secondary" onclick="userManager.closeRecoveryModal()">Close</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+    
+    // Add click outside to close functionality
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            userManager.closeRecoveryModal();
+        }
+    });
+}
 
-    // Validate code from modal
-    validateCodeFromModal() {
-        const codeInput = document.getElementById('completion-code');
-        const resultDiv = document.getElementById('validation-result');
-        const code = codeInput.value.trim().toUpperCase();
-        
-        if (!code) {
-            resultDiv.innerHTML = '<span style="color: #f44336;">Please enter a completion code</span>';
-            return;
-        }
-        
-        const result = this.validateCompletionCode(code);
-        
-        if (result.valid) {
-            resultDiv.innerHTML = `<span style="color: #4caf50;">${result.message}</span>`;
-            codeInput.value = '';
-            
-            // Update UI to show new completion
-            setTimeout(() => {
-                updateSidebarProgress();
-                this.updateUI();
-            }, 500);
-        } else {
-            resultDiv.innerHTML = `<span style="color: #f44336;">${result.message}</span>`;
-        }
+// NEW: Dedicated method to properly close recovery modal
+closeRecoveryModal() {
+    const modal = document.getElementById('recovery-modal-overlay');
+    if (modal) {
+        modal.remove();
     }
+    
+    // Ensure any leftover modal overlays are removed
+    const anyModalOverlays = document.querySelectorAll('.welcome-modal-overlay');
+    anyModalOverlays.forEach(overlay => {
+        overlay.remove();
+    });
+    
+    console.log('✅ Recovery modal closed successfully');
+}
+
+// Also update validateCodeFromModal to use the new close method
+validateCodeFromModal() {
+    const codeInput = document.getElementById('completion-code');
+    const resultDiv = document.getElementById('validation-result');
+    const code = codeInput.value.trim().toUpperCase();
+    
+    if (!code) {
+        resultDiv.innerHTML = '<span style="color: #f44336;">Please enter a completion code</span>';
+        return;
+    }
+    
+    const result = this.validateCompletionCode(code);
+    
+    if (result.valid) {
+        resultDiv.innerHTML = `<span style="color: #4caf50;">${result.message}</span>`;
+        codeInput.value = '';
+        
+        // Update UI to show new completion
+        setTimeout(() => {
+            updateSidebarProgress();
+            this.updateUI();
+            
+            // Auto-close modal after successful completion
+            setTimeout(() => {
+                this.closeRecoveryModal();
+                
+                // Show success toast
+                this.showXPGain(0, `Scenario unlocked: ${result.scenarioId}`);
+            }, 1500);
+        }, 500);
+    } else {
+        resultDiv.innerHTML = `<span style="color: #f44336;">${result.message}</span>`;
+    }
+}
 
     // Generate and show master recovery code
     showMasterCode() {
