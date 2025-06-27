@@ -940,3 +940,113 @@ body {
     from { transform: translateY(0px); }
     to { transform: translateY(-10px); }
 }
+/* Add these CSS fixes to your assets/css/style.css */
+
+/* Jekyll Reset - Override any default Jekyll styles */
+.content-container {
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 2rem !important;
+    display: flex !important;
+    gap: 2rem !important;
+    min-height: calc(100vh - 120px) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Ensure main content takes full width */
+.main-content {
+    margin-left: 0 !important;
+    min-height: calc(100vh - 80px) !important;
+    transition: margin-left 0.3s ease !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Fix challenge panel width */
+.challenge-panel {
+    flex: 1 !important;
+    display: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.challenge-panel.active {
+    display: block !important;
+}
+
+/* Fix KQL workspace sizing */
+.kql-workspace {
+    background-color: white !important;
+    border-radius: 12px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* Fix toolbar layout */
+.kql-toolbar {
+    background-color: #f8f9fa !important;
+    padding: 1rem 1.5rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid #e9ecef !important;
+    flex-wrap: wrap !important;
+}
+
+/* Ensure buttons are visible and properly sized */
+.toolbar-actions {
+    display: flex !important;
+    gap: 0.5rem !important;
+    flex-shrink: 0 !important;
+}
+
+.btn {
+    padding: 0.5rem 1rem !important;
+    border-radius: 6px !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    border: none !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+}
+
+/* Fix mobile responsiveness */
+@media (max-width: 768px) {
+    .content-container {
+        flex-direction: column !important;
+        padding: 1rem !important;
+        gap: 1rem !important;
+    }
+    
+    .kql-toolbar {
+        flex-direction: column !important;
+        gap: 1rem !important;
+        align-items: stretch !important;
+    }
+    
+    .toolbar-actions {
+        justify-content: center !important;
+    }
+}
+
+/* Jekyll-specific overrides */
+body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+}
+
+/* Ensure no weird Jekyll defaults interfere */
+.site-wrapper,
+.site-content,
+article,
+main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
