@@ -1,0 +1,13 @@
+title: "KQL Security Training Platform"
+description: "Master threat detection with hands-on KQL scenarios"
+baseurl: ""
+url: ""
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+
+# Include assets
+include:
+  - assets

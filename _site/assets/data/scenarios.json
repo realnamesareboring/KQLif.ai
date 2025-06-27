@@ -1,0 +1,58 @@
+{
+    "scenarios": {
+      "password-spray": {
+        "title": "Password Spray Attack Detection",
+        "platform": "Microsoft Entra ID",
+        "difficulty": "Beginner - Intermediate",
+        "duration": "15-20 minutes",
+        "points": 250,
+        "xpReward": 250,
+        "description": "<strong>Scenario:</strong> A Security Operations Center has detected unusual authentication patterns across multiple user accounts. Your task is to identify a potential password spray attack using KQL queries against Microsoft Entra ID sign-in logs.<br><br><strong>Learning Objectives:</strong> Master aggregation functions, time windows, IP address analysis, and user behavior correlation.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
+        "hint": "Start by filtering the SigninLogs table for failed authentication attempts (ResultType != 0). Then group by source IP address and count the number of unique users targeted.",
+        "dataFile": "signin-logs.csv",
+        "solutionFile": "solution.kql",
+        "tableName": "SigninLogs",
+        "expectedResults": {
+          "minRows": 1,
+          "suspiciousThreshold": 5,
+          "successCriteria": "Identifies IP addresses targeting multiple users"
+        }
+      },
+      "brute-force": {
+        "title": "Brute Force Attack Analysis", 
+        "platform": "Microsoft Entra ID",
+        "difficulty": "Beginner",
+        "duration": "10-15 minutes",
+        "points": 200,
+        "xpReward": 200,
+        "description": "<strong>Scenario:</strong> Multiple failed login attempts against a single user account have been detected. Investigate potential brute force attacks targeting high-value accounts.<br><br><strong>Learning Objectives:</strong> Basic filtering, counting operations, and user-focused analysis.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
+        "hint": "Focus on a single user account and count failed login attempts over time. Look for patterns that indicate automated attacks.",
+        "dataFile": "signin-logs.csv",
+        "solutionFile": "solution.kql", 
+        "tableName": "SigninLogs",
+        "expectedResults": {
+          "minRows": 1,
+          "suspiciousThreshold": 10,
+          "successCriteria": "Identifies users with excessive failed login attempts"
+        }
+      },
+      "s3-ransomware": {
+        "title": "AWS S3 Ransomware via SSE-C",
+        "platform": "Amazon S3", 
+        "difficulty": "Advanced",
+        "duration": "30-40 minutes",
+        "points": 500,
+        "xpReward": 500,
+        "description": "<strong>Scenario:</strong> Threat actor 'Codefinger' has been using compromised AWS credentials to encrypt S3 bucket data using Server-Side Encryption with Customer-Provided Keys (SSE-C).<br><br><strong>Learning Objectives:</strong> Advanced encryption analysis, native service abuse detection, API call correlation.<br><br><strong>Data Sources:</strong> AWS CloudTrail, S3 Access Logs",
+        "hint": "Look for unusual PutObject operations with SSE-C parameters, followed by lifecycle policy changes and ransom note uploads.",
+        "dataFile": "cloudtrail-logs.csv",
+        "solutionFile": "solution.kql",
+        "tableName": "AWSCloudTrail", 
+        "expectedResults": {
+          "minRows": 1,
+          "suspiciousThreshold": 3,
+          "successCriteria": "Identifies encryption operations and policy changes"
+        }
+      }
+    }
+  }
