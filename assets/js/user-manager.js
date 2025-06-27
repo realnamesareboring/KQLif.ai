@@ -1,4 +1,4 @@
-// user-manager.js - User Profile & Progress Management
+// user-manager.js - User Profile & Progress Management with Recovery System
 class UserManager {
     constructor() {
         this.defaultRanks = [
@@ -10,6 +10,13 @@ class UserManager {
             { title: 'Cyber Guardian', subtitle: 'Security Architect', minXP: 10000, maxXP: 19999 },
             { title: 'Elite Defender', subtitle: 'Security Leader', minXP: 20000, maxXP: 99999 }
         ];
+        
+        // Recovery code mappings
+        this.scenarioCodes = {
+            'password-spray': 'PWS-7K4M',
+            'brute-force': 'BRU-8L5N',
+            's3-ransomware': 'S3R-9M6O'
+        };
         
         this.init();
     }
@@ -56,7 +63,8 @@ class UserManager {
                             <li>✅ Scenarios completed</li>
                             <li>🏆 XP points earned</li>
                             <li>📈 Rank progression</li>
-                            <li>🎖️ Achievements unlocked</li>
+                            <li>🎖️ Completion certificates</li>
+                            <li>🔐 Recovery codes for progress backup</li>
                         </ul>
                     </div>
                 </div>
@@ -225,12 +233,11 @@ class UserManager {
         }, 3000);
     }
 
+    // Enhanced completion with recovery code generation
     completeScenario(scenarioName, xpReward) {
         console.log('🎓 completeScenario called:', scenarioName, 'XP:', xpReward);
         
-        // Mark scenario as completed
         const completed = this.getCompletedScenarios();
-        console.log('Current completed scenarios:', completed);
         
         if (!completed.includes(scenarioName)) {
             console.log('✅ New scenario completion detected');
@@ -238,14 +245,278 @@ class UserManager {
             localStorage.setItem('kql_scenarios_completed', JSON.stringify(completed));
             
             // Award XP
-            console.log('🏆 Awarding XP...');
             this.addXP(xpReward, scenarioName);
             
-            // 🎯 ADD THIS LINE
+            // Generate and show completion code
+            const completionCode = this.generateCompletionCode(scenarioName);
+            if (completionCode) {
+                setTimeout(() => {
+                    this.showCompletionCodeModal(scenarioName, completionCode);
+                }, 2000); // Show after XP animation
+            }
+            
             markScenarioCompleted(scenarioName);
         } else {
             console.log('⚠️ Scenario already completed, no XP awarded');
         }
+    }
+
+    // Generate scenario completion codes
+    generateCompletionCode(scenarioId) {
+        const baseCode = this.scenarioCodes[scenarioId];
+        if (!baseCode) return null;
+        
+        const userName = this.getUserName();
+        const timestamp = Date.now();
+        const hash = this.simpleHash(`${userName}-${scenarioId}-${timestamp}`);
+        const suffix = Math.abs(hash).toString(36).toUpperCase().slice(0, 4);
+        
+        return `${baseCode}-${suffix}`;
+    }
+
+    // Validate and apply completion codes
+    validateCompletionCode(code) {
+        const parts = code.split('-');
+        if (parts.length !== 3) {
+            return { valid: false, message: 'Invalid code format. Use format: PWS-7K4M-ABCD' };
+        }
+        
+        const scenarioPrefix = parts.slice(0, 2).join('-');
+        const scenarioId = Object.keys(this.scenarioCodes).find(id => 
+            this.scenarioCodes[id] === scenarioPrefix
+        );
+        
+        if (!scenarioId) {
+            return { valid: false, message: 'Unknown scenario code' };
+        }
+        
+        // Check if already completed
+        const completed = this.getCompletedScenarios();
+        if (completed.includes(scenarioId)) {
+            return { valid: false, message: 'Scenario already completed!' };
+        }
+        
+        // Mark as completed and award XP
+        completed.push(scenarioId);
+        localStorage.setItem('kql_scenarios_completed', JSON.stringify(completed));
+        
+        const scenarioMetadata = window.dataLoader?.getScenarioMetadata(scenarioId);
+        if (scenarioMetadata?.xpReward) {
+            this.addXP(scenarioMetadata.xpReward, scenarioId);
+        }
+        
+        markScenarioCompleted(scenarioId);
+        
+        return { 
+            valid: true, 
+            scenarioId, 
+            message: `🎯 Successfully unlocked: ${scenarioId.replace('-', ' ')}!` 
+        };
+    }
+
+    // Generate master recovery code
+    generateMasterRecoveryCode() {
+        const userData = {
+            name: this.getUserName(),
+            xp: this.getUserXP(),
+            completed: this.getCompletedScenarios(),
+            created: localStorage.getItem('kql_user_created'),
+            version: 1
+        };
+        
+        const encoded = btoa(JSON.stringify(userData));
+        const hash = this.simpleHash(encoded).toString(36).toUpperCase().slice(0, 8);
+        return `MASTER-${hash}-${Date.now().toString(36).toUpperCase()}`;
+    }
+
+    // Show completion code modal
+    showCompletionCodeModal(scenarioName, code) {
+        const modal = document.createElement('div');
+        modal.className = 'rankup-modal-overlay';
+        modal.innerHTML = `
+            <div class="rankup-modal">
+                <div class="rankup-animation">🎯</div>
+                <h2>Scenario Completed!</h2>
+                <div class="new-rank">
+                    <div class="rank-title">${scenarioName.replace('-', ' ')}</div>
+                    <div class="rank-subtitle">Challenge Mastered</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                    <strong>🔐 Your Completion Code:</strong><br>
+                    <span style="font-family: monospace; font-size: 1.2rem; letter-spacing: 2px; color: #81c784;">${code}</span>
+                </div>
+                <p style="font-size: 0.9rem; opacity: 0.9;">💾 Save this code to restore progress or prove completion!</p>
+                <button class="btn btn-primary" onclick="this.parentElement.parentElement.remove()">
+                    Continue Training! 🚀
+                </button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        setTimeout(() => modal.classList.add('show'), 100);
+    }
+
+    // Show recovery system modal
+    showRecoveryModal() {
+        const modal = document.createElement('div');
+        modal.className = 'welcome-modal-overlay';
+        modal.innerHTML = `
+            <div class="welcome-modal" style="max-width: 600px;">
+                <div class="welcome-header">
+                    <h2>🔐 Progress Recovery & Verification</h2>
+                    <p>Backup, restore, and verify your training progress</p>
+                </div>
+                <div class="welcome-content">
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">🏆 Generate Certificate</h4>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Create a printable certificate of your achievements</p>
+                        <button class="btn btn-primary" onclick="userManager.generateAndShowCertificate()">🖨️ Generate Certificate</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="color: #2c5aa0; margin-bottom: 0.5rem;">💾 Master Recovery Code</h4>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 1rem;">Backup all your progress with a single code</p>
+                        <button class="btn btn-secondary" onclick="userManager.showMasterCode()">🔑 Generate Backup Code</button>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border-left: 4px solid #ffc107;">
+                        <h4 style="color: #856404; margin-bottom: 0.5rem;">🎯 Enter Completion Code</h4>
+                        <p style="font-size: 0.9rem; color: #856404; margin-bottom: 1rem;">Unlock scenarios with completion codes</p>
+                        <input type="text" id="completion-code" placeholder="PWS-7K4M-ABCD" style="width: 100%; margin-bottom: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                        <button class="btn btn-primary" onclick="userManager.validateCodeFromModal()">🔓 Unlock Scenario</button>
+                        <div id="validation-result" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
+                    </div>
+                </div>
+                <div class="welcome-actions">
+                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove()">Close</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+    }
+
+    // Validate code from modal
+    validateCodeFromModal() {
+        const codeInput = document.getElementById('completion-code');
+        const resultDiv = document.getElementById('validation-result');
+        const code = codeInput.value.trim().toUpperCase();
+        
+        if (!code) {
+            resultDiv.innerHTML = '<span style="color: #f44336;">Please enter a completion code</span>';
+            return;
+        }
+        
+        const result = this.validateCompletionCode(code);
+        
+        if (result.valid) {
+            resultDiv.innerHTML = `<span style="color: #4caf50;">${result.message}</span>`;
+            codeInput.value = '';
+            
+            // Update UI to show new completion
+            setTimeout(() => {
+                updateSidebarProgress();
+                this.updateUI();
+            }, 500);
+        } else {
+            resultDiv.innerHTML = `<span style="color: #f44336;">${result.message}</span>`;
+        }
+    }
+
+    // Generate and show master recovery code
+    showMasterCode() {
+        const code = this.generateMasterRecoveryCode();
+        alert(`🔐 Master Recovery Code:\n\n${code}\n\n💾 Save this code to restore your complete progress later!`);
+    }
+
+    // Generate certificate
+    generateAndShowCertificate() {
+        const userData = {
+            name: this.getUserName(),
+            rank: this.getCurrentRank(this.getUserXP()),
+            xp: this.getUserXP(),
+            completed: this.getCompletedScenarios().length,
+            completedScenarios: this.getCompletedScenarios(),
+            dateGenerated: new Date().toLocaleDateString()
+        };
+        
+        const certificateHTML = this.createCertificateHTML(userData);
+        
+        // Open in new window for printing
+        const newWindow = window.open('', '_blank');
+        newWindow.document.write(certificateHTML);
+        newWindow.document.close();
+    }
+
+    createCertificateHTML(userData) {
+        return `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>KQL Security Training Certificate - ${userData.name}</title>
+            <style>
+                body { font-family: 'Segoe UI', sans-serif; max-width: 800px; margin: 0 auto; padding: 2rem; background: #f8f9fa; }
+                .certificate { border: 3px solid #2c5aa0; padding: 3rem; text-align: center; background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%); box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+                .title { font-size: 2.5rem; color: #2c5aa0; margin-bottom: 0.5rem; font-weight: 700; }
+                .subtitle { font-size: 1.2rem; color: #666; margin-bottom: 2rem; }
+                .name { font-size: 2rem; color: #1e3d6f; margin: 1.5rem 0; font-weight: 600; border-bottom: 2px solid #2c5aa0; padding-bottom: 0.5rem; display: inline-block; }
+                .rank { font-size: 1.5rem; color: #4caf50; margin: 1rem 0; font-weight: 600; }
+                .details { margin: 2rem 0; line-height: 1.8; font-size: 1.1rem; text-align: left; background: #f8f9fa; padding: 1.5rem; border-radius: 8px; }
+                .signature { margin-top: 3rem; border-top: 2px solid #2c5aa0; padding-top: 1rem; font-size: 0.9rem; color: #666; }
+                .logo { font-size: 3rem; margin-bottom: 1rem; }
+                @media print { body { margin: 0; background: white; } }
+            </style>
+        </head>
+        <body>
+            <div class="certificate">
+                <div class="logo">🛡️</div>
+                <div class="title">KQL Security Training Platform</div>
+                <div class="subtitle">Certificate of Completion</div>
+                
+                <div>This is to certify that</div>
+                <div class="name">${userData.name}</div>
+                <div>has successfully completed KQL Security Training challenges</div>
+                
+                <div class="rank">🏆 Achieved Rank: ${userData.rank.title}</div>
+                
+                <div class="details">
+                    <strong>📊 Training Summary:</strong><br>
+                    • Total Experience Points: <strong>${userData.xp} XP</strong><br>
+                    • Security Scenarios Completed: <strong>${userData.completed}</strong><br>
+                    • Current Skill Level: <strong>${userData.rank.subtitle}</strong><br>
+                    • Certificate Generated: <strong>${userData.dateGenerated}</strong><br>
+                    ${userData.completedScenarios.length > 0 ? `• Mastered Scenarios: <strong>${userData.completedScenarios.map(s => s.replace('-', ' ')).join(', ')}</strong>` : ''}
+                </div>
+                
+                <div class="signature">
+                    <strong>KQL Security Training Platform</strong><br>
+                    Professional Cybersecurity Education<br>
+                    Certificate ID: KQL-${userData.xp}-${Date.now().toString(36).toUpperCase()}
+                </div>
+            </div>
+            
+            <script>
+                window.onload = function() {
+                    setTimeout(() => {
+                        if (confirm('🖨️ Print certificate now?')) {
+                            window.print();
+                        }
+                    }, 500);
+                }
+            </script>
+        </body>
+        </html>
+        `;
+    }
+
+    // Helper functions
+    simpleHash(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return hash;
     }
 
     getCompletedScenarios() {

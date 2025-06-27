@@ -1231,3 +1231,58 @@ main {
 .kql-workspace {
     margin-bottom: 1.5rem !important;
 }
+/* Recovery System Button */
+.btn-recovery {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 1rem;
+    font-weight: 600;
+}
+
+.btn-recovery:hover {
+    background-color: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+    transform: scale(1.05);
+}
+
+/* Enhanced modal for recovery system */
+.welcome-modal {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .rank-system {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background-color: rgba(255,255,255,0.1);
+        padding: 0.5rem;
+        border-radius: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-recovery {
+        margin-left: 0;
+        font-size: 0.9rem;
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .xp-progress {
+        display: none; /* Hide XP bar on mobile to save space */
+    }
+}
