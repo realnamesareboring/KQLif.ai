@@ -1,7 +1,7 @@
 title: "KQL Security Training Platform"
 description: "Master threat detection with hands-on KQL scenarios"
-baseurl: ""
-url: ""
+baseurl: "/KQLif.ai"
+url: "https://realnamesareboring.github.io/"
 
 # Build settings
 markdown: kramdown

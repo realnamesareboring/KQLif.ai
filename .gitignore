@@ -1,0 +1,4 @@
+_site/
+.qodo/
+.jekyll-cache/
+_config_local.yml
