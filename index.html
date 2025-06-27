@@ -312,6 +312,7 @@
                     </div>
                 </div>
 
+                <!-- Replace the KQL toolbar section in your index.html with this -->
                 <div class="kql-workspace">
                     <div class="kql-toolbar">
                         <div class="kql-toolbar-left">
@@ -321,23 +322,14 @@
                         <div class="toolbar-actions">
                             <button class="btn btn-primary" onclick="runQuery()">▶ Run Query</button>
                             <button class="btn btn-secondary" onclick="toggleHint()">💡 Hint</button>
+                            <button class="btn btn-warning" onclick="revealSolution()">🔍 Reveal Solution</button>
                         </div>
                     </div>
                     
                     <div class="kql-editor">
                         <div class="line-numbers" id="line-numbers">1<br>2<br>3<br>4<br>5<br>6<br>7<br>8<br>9<br>10</div>
                         <textarea class="query-editor" id="query-editor" placeholder="// Write your KQL query here
-// Example: SigninLogs | where TimeGenerated > ago(24h)
-
-SigninLogs
-| where TimeGenerated > ago(24h)
-| where ResultType != 0  // Failed logins only
-| summarize 
-    UniqueUsers = dcount(UserPrincipalName),
-    FailedAttempts = count()
-    by IPAddress
-| where UniqueUsers >= 5  // Potential spray threshold
-| order by UniqueUsers desc"></textarea>
+                // Example: SigninLogs | where TimeGenerated > ago(24h)"></textarea>
                     </div>
                 </div>
 

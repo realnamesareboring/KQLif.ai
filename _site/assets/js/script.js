@@ -86,8 +86,17 @@ async function loadScenario(scenarioId) {
     document.getElementById('scenario-description').innerHTML = metadata.description;
     document.getElementById('hint-content').textContent = metadata.hint;
     
-    // Load the solution as default query
-    document.getElementById('query-editor').value = scenarioData.solution;
+    // 🎯 NEW: Start with empty query editor instead of loading solution
+    document.getElementById('query-editor').value = `// Write your KQL query here to detect ${metadata.title.toLowerCase()}
+// Use the raw data table above to analyze the logs
+// 
+// Example structure:
+// SigninLogs
+// | where TimeGenerated > ago(24h)
+// | where [your conditions here]
+// | summarize [your analysis here]
+
+`;
     
     // Hide hint panel and results
     document.getElementById('hint-panel').classList.remove('show');
@@ -98,6 +107,75 @@ async function loadScenario(scenarioId) {
     
     // Generate and populate dynamic table
     populateDynamicTable(scenarioData);
+}
+
+// 🎯 NEW: Function to reveal the solution
+async function revealSolution() {
+    if (!selectedScenario) {
+        console.error('No scenario selected');
+        return;
+    }
+
+    const scenarioData = window.dataLoader.getCurrentData();
+    if (!scenarioData || !scenarioData.solution) {
+        console.error('No solution available for current scenario');
+        return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+        '🔍 Reveal Solution?\n\n' +
+        'This will show the complete KQL solution for this scenario. ' +
+        'Are you sure you want to see it? Try solving it yourself first for the best learning experience!'
+    );
+
+    if (confirmed) {
+        document.getElementById('query-editor').value = scenarioData.solution;
+        updateLineNumbers();
+        
+        // Show a notification
+        showNotification('💡 Solution revealed! Study the query to understand the detection logic.', 'info');
+    }
+}
+
+// 🎯 NEW: Helper function to show notifications
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease;
+    `;
+
+    switch(type) {
+        case 'success':
+            notification.style.backgroundColor = '#4caf50';
+            break;
+        case 'info':
+            notification.style.backgroundColor = '#2196f3';
+            break;
+        case 'warning':
+            notification.style.backgroundColor = '#ff9800';
+            break;
+        default:
+            notification.style.backgroundColor = '#2c5aa0';
+    }
+
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    // Auto remove after 4 seconds
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
 }
 
 function populateDynamicTable(scenarioData) {
@@ -137,43 +215,196 @@ function runQuery() {
     resultCount.textContent = 'Processing...';
     
     setTimeout(() => {
-        // Execute query using data loader
-        const validation = window.dataLoader.validateQuery(query, selectedScenario);
+        // Get user name for personalized messages
+        const userName = window.userManager ? window.userManager.getUserName() : 'Analyst';
         
-        if (validation.valid) {
-            // Display successful results
-            displayQueryResults(validation.results, validation.expectedResults);
-            resultCount.textContent = `${validation.results.length} result(s) found • Query completed in 1.8s`;
-            
-            // Award XP for successful completion
-            console.log('=== XP DEBUG INFO ===');
-            console.log('Selected scenario:', selectedScenario);
-            const scenarioMetadata = window.dataLoader.getScenarioMetadata(selectedScenario);
-            console.log('Scenario metadata:', scenarioMetadata);
-            console.log('XP Reward available:', scenarioMetadata?.xpReward);
-            console.log('UserManager exists:', !!window.userManager);
-            
-            if (window.userManager && scenarioMetadata?.xpReward) {
-                console.log('🎯 Attempting to award XP...');
-                userManager.completeScenario(selectedScenario, scenarioMetadata.xpReward);
-            } else {
-                console.log('❌ XP award failed - Missing UserManager or xpReward');
-            }
-            console.log('=== END XP DEBUG ===');
-            
-        } else {
-            // Display error or guidance
+        // Check if user is running the template/example
+        if (isTemplateQuery(query)) {
             resultsContent.innerHTML = `
-                <div style="color: #f44336; background: #ffebee; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f44336;">
-                    <strong>❌ Query Issue</strong><br>
-                    ${validation.message}
+                <div style="color: #ff9800; background: #fff3e0; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <strong>⚠️ Template Detected, ${userName}!</strong><br>
+                    You're running the example template. You need to write an actual KQL query to detect the attack pattern.
                     <br><br>
-                    <strong>💡 Try:</strong> Check your syntax and filtering conditions. Make sure you're targeting the right columns.
+                    <strong>💡 Hint:</strong> Look at the raw data above and identify patterns like:
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem; line-height: 1.6;">
+                        <li>Multiple failed login attempts (ResultType != 0)</li>
+                        <li>Same IP address targeting many users</li>
+                        <li>Group by IP address and count unique users</li>
+                    </ul>
                 </div>
             `;
-            resultCount.textContent = 'Query completed - Issues found';
+            resultCount.textContent = 'Template detected - Write your own query!';
+            return;
         }
+
+        // Check if query is too basic or incomplete
+        if (isIncompleteQuery(query)) {
+            resultsContent.innerHTML = `
+                <div style="color: #f44336; background: #ffebee; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f44336;">
+                    <strong>❌ Not quite, ${userName}! Try again.</strong><br>
+                    Your query needs more analysis to detect the attack pattern. 
+                    <br><br>
+                    <strong>💡 Try adding:</strong>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem; line-height: 1.6;">
+                        <li>A <code>summarize</code> operation to group the data</li>
+                        <li>Count unique users per IP address</li>
+                        <li>Filter for suspicious thresholds</li>
+                    </ul>
+                </div>
+            `;
+            resultCount.textContent = 'Query too basic - Need more analysis!';
+            return;
+        }
+        
+        // Execute the actual user query
+        const queryResult = window.dataLoader.executeQuery(query);
+        
+        if (!queryResult.success) {
+            resultsContent.innerHTML = `
+                <div style="color: #f44336; background: #ffebee; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #f44336;">
+                    <strong>❌ Query Error, ${userName}!</strong><br>
+                    ${queryResult.error}
+                    <br><br>
+                    <strong>💡 Check:</strong> Syntax, column names, and KQL operators.
+                </div>
+            `;
+            resultCount.textContent = 'Query execution failed';
+            return;
+        }
+
+        const results = queryResult.data;
+        
+        // Check if query returned meaningful results for attack detection
+        if (results.length === 0) {
+            resultsContent.innerHTML = `
+                <div style="color: #ff9800; background: #fff3e0; padding: 1.5rem; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <strong>🔍 No Results Found, ${userName}!</strong><br>
+                    Your query executed successfully but didn't find any attack patterns.
+                    <br><br>
+                    <strong>💡 Try:</strong>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem; line-height: 1.6;">
+                        <li>Adjusting your filter conditions</li>
+                        <li>Lowering thresholds (try UniqueUsers >= 3)</li>
+                        <li>Checking for failed logins (ResultType != 0)</li>
+                    </ul>
+                </div>
+            `;
+            resultCount.textContent = 'Query executed - No attack patterns found';
+            return;
+        }
+
+        // Check if results show attack detection (successful scenario completion)
+        const attackDetected = validateAttackDetection(results, selectedScenario);
+        
+        if (attackDetected.success) {
+            // Display successful results
+            displayQueryResults(results);
+            resultCount.textContent = `${results.length} threat(s) detected • Query completed in 1.8s`;
+            
+            // Show success message
+            showNotification(`🎉 Excellent work, ${userName}! Attack pattern detected successfully!`, 'success');
+            
+            // Award XP for successful completion
+            const scenarioMetadata = window.dataLoader.getScenarioMetadata(selectedScenario);
+            if (window.userManager && scenarioMetadata?.xpReward) {
+                userManager.completeScenario(selectedScenario, scenarioMetadata.xpReward);
+            }
+        } else {
+            // Query returned results but didn't detect the right attack pattern
+            displayQueryResults(results);
+            resultsContent.innerHTML += `
+                <div style="margin-top: 1rem; color: #ff9800; background: #fff3e0; padding: 1rem; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <strong>⚠️ Close, ${userName}!</strong><br>
+                    Your query returned results, but ${attackDetected.message}
+                </div>
+            `;
+            resultCount.textContent = `${results.length} result(s) found • Attack pattern needs refinement`;
+        }
+        
     }, 1500);
+}
+
+// Helper function to detect if user is running the template
+function isTemplateQuery(query) {
+    const normalizedQuery = query.toLowerCase().replace(/\s+/g, ' ').trim();
+    
+    // Check for template indicators
+    const templateIndicators = [
+        'write your kql query here',
+        '[your conditions here]',
+        '[your analysis here]',
+        'example structure',
+        '// signinlogs',
+        'where timegenerated > ago(24h) // where [your conditions'
+    ];
+    
+    return templateIndicators.some(indicator => 
+        normalizedQuery.includes(indicator.toLowerCase())
+    );
+}
+
+// Helper function to detect incomplete/basic queries
+function isIncompleteQuery(query) {
+    const normalizedQuery = query.toLowerCase().replace(/\s+/g, ' ').trim();
+    
+    // Check if query is too basic (missing key components for attack detection)
+    const hasWhere = normalizedQuery.includes('where');
+    const hasSummarize = normalizedQuery.includes('summarize');
+    const hasFailedLoginFilter = normalizedQuery.includes('resulttype') && normalizedQuery.includes('!= 0');
+    
+    // If it's just a basic select or take without analysis, it's incomplete
+    if (normalizedQuery.includes('take') && !hasSummarize) {
+        return true;
+    }
+    
+    // If no where clause or no summarize for grouping, likely incomplete
+    if (!hasWhere || !hasSummarize) {
+        return true;
+    }
+    
+    // If not filtering for failed logins, likely incomplete for this scenario
+    if (!hasFailedLoginFilter) {
+        return true;
+    }
+    
+    return false;
+}
+
+// Helper function to validate if query detected the actual attack pattern
+function validateAttackDetection(results, scenarioId) {
+    if (scenarioId === 'password-spray') {
+        // Check if results show suspicious IP addresses with multiple users
+        const suspiciousIPs = results.filter(row => 
+            row.UniqueUsers && row.UniqueUsers >= 5
+        );
+        
+        if (suspiciousIPs.length === 0) {
+            return { 
+                success: false, 
+                message: "try filtering for IP addresses that target 5+ unique users to detect password spray attacks." 
+            };
+        }
+        
+        // Check if the known attack IP is detected
+        const knownAttackIP = results.find(row => 
+            row.IPAddress && row.IPAddress.includes('203.0.113.45')
+        );
+        
+        if (!knownAttackIP) {
+            return { 
+                success: false, 
+                message: "you're missing the main attack IP. Look for patterns with high unique user counts." 
+            };
+        }
+        
+        return { success: true, message: "Perfect detection!" };
+    }
+    
+    // Default validation for other scenarios
+    return { 
+        success: results.length > 0, 
+        message: results.length === 0 ? "no attack patterns were detected." : "Good detection!" 
+    };
 }
 
 function displayQueryResults(results, expectedResults = null) {
@@ -315,3 +546,87 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }, 200);
 });
+// Add these helper functions at the end of your script.js file, before the DOMContentLoaded event
+
+        // Helper function to detect if user is running the template
+        function isTemplateQuery(query) {
+            const normalizedQuery = query.toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            // Check for template indicators
+            const templateIndicators = [
+                'write your kql query here',
+                '[your conditions here]',
+                '[your analysis here]',
+                'example structure',
+                '// signinlogs',
+                'where timegenerated > ago(24h) // where [your conditions'
+            ];
+            
+            return templateIndicators.some(indicator => 
+                normalizedQuery.includes(indicator.toLowerCase())
+            );
+        }
+
+        // Helper function to detect incomplete/basic queries
+        function isIncompleteQuery(query) {
+            const normalizedQuery = query.toLowerCase().replace(/\s+/g, ' ').trim();
+            
+            // Check if query is too basic (missing key components for attack detection)
+            const hasWhere = normalizedQuery.includes('where');
+            const hasSummarize = normalizedQuery.includes('summarize');
+            const hasFailedLoginFilter = normalizedQuery.includes('resulttype') && normalizedQuery.includes('!= 0');
+            
+            // If it's just a basic select or take without analysis, it's incomplete
+            if (normalizedQuery.includes('take') && !hasSummarize) {
+                return true;
+            }
+            
+            // If no where clause or no summarize for grouping, likely incomplete
+            if (!hasWhere || !hasSummarize) {
+                return true;
+            }
+            
+            // If not filtering for failed logins, likely incomplete for this scenario
+            if (!hasFailedLoginFilter) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        // Helper function to validate if query detected the actual attack pattern
+        function validateAttackDetection(results, scenarioId) {
+            if (scenarioId === 'password-spray') {
+                // Check if results show suspicious IP addresses with multiple users
+                const suspiciousIPs = results.filter(row => 
+                    row.UniqueUsers && row.UniqueUsers >= 5
+                );
+                
+                if (suspiciousIPs.length === 0) {
+                    return { 
+                        success: false, 
+                        message: "try filtering for IP addresses that target 5+ unique users to detect password spray attacks." 
+                    };
+                }
+                
+                // Check if the known attack IP is detected
+                const knownAttackIP = results.find(row => 
+                    row.IPAddress && row.IPAddress.includes('203.0.113.45')
+                );
+                
+                if (!knownAttackIP) {
+                    return { 
+                        success: false, 
+                        message: "you're missing the main attack IP. Look for patterns with high unique user counts." 
+                    };
+                }
+                
+                return { success: true, message: "Perfect detection!" };
+            }
+            
+            // Default validation for other scenarios
+            return { 
+                success: results.length > 0, 
+                message: results.length === 0 ? "no attack patterns were detected." : "Good detection!" 
+            };
+        }

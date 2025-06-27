@@ -1,0 +1,28 @@
+// Password Spray Attack Detection
+// Identifies IP addresses targeting multiple user accounts with failed login attempts
+// This pattern suggests automated password spraying against multiple accounts
+SigninLogs
+| where TimeGenerated > ago(24h)
+| where ResultType != 0  // Failed logins only
+| summarize 
+    UniqueUsers = dcount(UserPrincipalName),
+    FailedAttempts = count(),
+    TargetedUsers = make_set(UserPrincipalName),
+    FirstAttempt = min(TimeGenerated),
+    LastAttempt = max(TimeGenerated)
+    by IPAddress, Location
+| where UniqueUsers >= 5  // Potential spray threshold
+| extend 
+    AttackDuration = LastAttempt - FirstAttempt,
+    AverageAttemptsPerUser = FailedAttempts / UniqueUsers
+| order by UniqueUsers desc, FailedAttempts desc
+| project 
+    IPAddress,
+    Location,
+    UniqueUsers,
+    FailedAttempts,
+    AverageAttemptsPerUser,
+    AttackDuration,
+    FirstAttempt,
+    LastAttempt,
+    TargetedUsers
