@@ -1286,3 +1286,486 @@ main {
         display: none; /* Hide XP bar on mobile to save space */
     }
 }
+/* Updated CSS for Stacking Progressive Hints & Enhanced Walkthrough */
+/* Add these styles to your existing assets/css/style.css */
+
+/* Enhanced Hint Panel - Now supports stacking */
+.hint-panel {
+    background-color: #fff3cd !important;
+    border: 1px solid #ffd60a !important;
+    border-radius: 12px !important;
+    padding: 2rem !important;
+    margin-bottom: 1.5rem !important;
+    display: none !important;
+    position: relative !important;
+    box-shadow: 0 4px 16px rgba(255, 193, 7, 0.2) !important;
+    transition: all 0.3s ease !important;
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+}
+
+.hint-panel.show {
+    display: block !important;
+    animation: slideDownWithBounce 0.4s ease !important;
+}
+
+/* Hints Header Styling */
+.hints-header {
+    margin-bottom: 1.5rem !important;
+    padding-bottom: 1rem !important;
+    border-bottom: 2px solid rgba(255, 193, 7, 0.3) !important;
+}
+
+.hints-header .hint-title {
+    color: #856404 !important;
+    font-weight: 700 !important;
+    margin-bottom: 0.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-size: 1.2rem !important;
+}
+
+/* Individual Hint Items - Stacking Style */
+.hint-item {
+    margin-bottom: 1.5rem !important;
+    padding: 1.25rem !important;
+    border-radius: 8px !important;
+    border-left: 4px solid rgba(255, 193, 7, 0.4) !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+}
+
+.hint-item.hint-latest {
+    border-left-color: #ffc107 !important;
+    box-shadow: 0 4px 16px rgba(255, 193, 7, 0.2) !important;
+}
+
+.hint-item:hover {
+    transform: translateX(4px) !important;
+    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.25) !important;
+}
+
+/* Hint Step Header */
+.hint-step-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.hint-step-header span {
+    flex-shrink: 0 !important;
+    transition: all 0.2s ease !important;
+}
+
+.hint-step-header h4 {
+    margin: 0 !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    color: #856404 !important;
+}
+
+/* Hint Content */
+.hint-content {
+    color: #856404 !important;
+    line-height: 1.6 !important;
+    margin-bottom: 1rem !important;
+}
+
+.hint-content p {
+    margin: 0 0 1rem 0 !important;
+}
+
+/* Enhanced Hint Example Code Block */
+.hint-example {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 6px !important;
+    padding: 1rem !important;
+    margin-top: 1rem !important;
+    border-left: 3px solid #ffc107 !important;
+    transition: all 0.2s ease !important;
+}
+
+.hint-example:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+    transform: translateY(-1px) !important;
+}
+
+.hint-example strong {
+    color: #856404 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    font-weight: 600 !important;
+}
+
+.hint-example code {
+    background: #f8f9fa !important;
+    color: #1e3d6f !important;
+    padding: 0.75rem !important;
+    border-radius: 4px !important;
+    font-family: 'Consolas', 'Monaco', monospace !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    border: 1px solid #e9ecef !important;
+    display: block !important;
+    overflow-x: auto !important;
+    white-space: pre !important;
+}
+
+/* Enhanced Hint Actions */
+.hint-actions {
+    margin-top: 1.5rem !important;
+    padding-top: 1.5rem !important;
+    border-top: 2px solid rgba(255, 193, 7, 0.3) !important;
+    display: flex !important;
+    gap: 0.75rem !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+}
+
+.hint-actions .btn {
+    font-size: 0.9rem !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    font-weight: 600 !important;
+    border: none !important;
+}
+
+.hint-actions .btn:hover {
+    transform: translateY(-2px) !important;
+}
+
+/* Enhanced Walkthrough Modal */
+.walkthrough-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(0, 0, 0, 0.85) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999 !important;
+    animation: fadeIn 0.3s ease !important;
+    padding: 1rem !important;
+}
+
+.walkthrough-modal {
+    background: white !important;
+    border-radius: 16px !important;
+    padding: 2rem !important;
+    max-width: 900px !important;
+    width: 95% !important;
+    max-height: 95vh !important;
+    overflow-y: auto !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    animation: slideUp 0.3s ease !important;
+    position: relative !important;
+}
+
+/* Walkthrough Header */
+.walkthrough-header {
+    text-align: center !important;
+    margin-bottom: 2rem !important;
+    border-bottom: 2px solid #e9ecef !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.walkthrough-header h2 {
+    color: #2c5aa0 !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 2rem !important;
+    font-weight: 700 !important;
+}
+
+.walkthrough-header p {
+    color: #666 !important;
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    line-height: 1.5 !important;
+}
+
+/* Reasoning Steps */
+.reasoning-step {
+    margin-bottom: 1.5rem !important;
+    padding: 1rem !important;
+    background: #f8f9fa !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+.reasoning-step:hover {
+    transform: translateX(4px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.reasoning-step code {
+    background: rgba(44, 90, 160, 0.1) !important;
+    padding: 0.2rem 0.4rem !important;
+    border-radius: 3px !important;
+    font-family: 'Consolas', 'Monaco', monospace !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+}
+
+.reasoning-step p {
+    margin: 0.5rem 0 !important;
+    color: #333 !important;
+    line-height: 1.5 !important;
+}
+
+.reasoning-step p:last-child {
+    margin-bottom: 0 !important;
+    color: #666 !important;
+    font-size: 0.9rem !important;
+    font-style: italic !important;
+}
+
+/* Solution Display */
+.walkthrough-solution {
+    margin-bottom: 2rem !important;
+    padding: 1rem !important;
+    background: #f8f9fa !important;
+    border-radius: 8px !important;
+    border: 1px solid #e9ecef !important;
+}
+
+.walkthrough-solution h3 {
+    color: #2c5aa0 !important;
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    font-weight: 600 !important;
+}
+
+.walkthrough-solution pre {
+    background: #1e1e1e !important;
+    color: #d4d4d4 !important;
+    padding: 1rem !important;
+    border-radius: 6px !important;
+    overflow-x: auto !important;
+    margin: 0 !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+    border: 1px solid #444 !important;
+}
+
+/* Walkthrough Actions */
+.walkthrough-actions {
+    text-align: center !important;
+    display: flex !important;
+    gap: 1rem !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    margin-top: 2rem !important;
+}
+
+.walkthrough-actions .btn {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+    min-width: 140px !important;
+    border: none !important;
+}
+
+.walkthrough-actions .btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Glow Animation for Latest Hint */
+@keyframes hintGlow {
+    0% { 
+        transform: translateX(-5px); 
+        box-shadow: 0 0 0 rgba(255, 193, 7, 0); 
+    }
+    50% { 
+        transform: translateX(0); 
+        box-shadow: 0 4px 16px rgba(255, 193, 7, 0.3); 
+    }
+    100% { 
+        transform: translateX(0); 
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2); 
+    }
+}
+
+/* Enhanced Button Styles */
+.btn-hint-primary {
+    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3) !important;
+}
+
+.btn-hint-primary:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #ef6c00 100%) !important;
+    box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4) !important;
+}
+
+/* Scroll Styling for Hint Panel */
+.hint-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.hint-panel::-webkit-scrollbar-track {
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 4px;
+}
+
+.hint-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 193, 7, 0.4);
+    border-radius: 4px;
+}
+
+.hint-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 193, 7, 0.6);
+}
+
+/* Scroll Styling for Walkthrough Modal */
+.walkthrough-modal::-webkit-scrollbar {
+    width: 8px;
+}
+
+.walkthrough-modal::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.walkthrough-modal::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.walkthrough-modal::-webkit-scrollbar-thumb:hover {
+    background: #a1a1a1;
+}
+
+/* Mobile Responsive Enhancements */
+@media (max-width: 768px) {
+    .hint-panel {
+        padding: 1.5rem !important;
+        max-height: 60vh !important;
+    }
+    
+    .hint-item {
+        padding: 1rem !important;
+    }
+    
+    .hint-step-header {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: flex-start !important;
+    }
+    
+    .hint-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .hint-actions .btn {
+        width: 100% !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    .walkthrough-modal {
+        width: 98% !important;
+        padding: 1.5rem !important;
+        margin: 0.5rem !important;
+        max-height: 98vh !important;
+    }
+    
+    .walkthrough-header h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    .reasoning-step {
+        padding: 0.75rem !important;
+    }
+    
+    .walkthrough-actions {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    
+    .walkthrough-actions .btn {
+        width: 100% !important;
+        min-width: auto !important;
+    }
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+    .walkthrough-modal {
+        max-width: 700px !important;
+        padding: 1.75rem !important;
+    }
+    
+    .hint-panel {
+        max-height: 65vh !important;
+    }
+}
+
+/* Enhanced Animations */
+@keyframes slideDownWithBounce {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(5px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+    }
+    to { 
+        opacity: 1; 
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Dark Mode Support (Optional) */
+@media (prefers-color-scheme: dark) {
+    .walkthrough-modal {
+        background: #1e1e1e !important;
+        color: #e0e0e0 !important;
+    }
+    
+    .walkthrough-header {
+        border-bottom-color: #333 !important;
+    }
+    
+    .reasoning-step {
+        background: #2a2a2a !important;
+        color: #e0e0e0 !important;
+    }
+    
+    .walkthrough-solution {
+        background: #2a2a2a !important;
+        border-color: #333 !important;
+    }
+}

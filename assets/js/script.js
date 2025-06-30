@@ -630,3 +630,505 @@ document.addEventListener('DOMContentLoaded', async function() {
                 message: results.length === 0 ? "no attack patterns were detected." : "Good detection!" 
             };
         }
+// FIXED: Progressive Hints System (Stacking) + Working Walkthrough
+// Replace the hint-related functions in your script.js with these updated versions
+
+// Global state for hints
+let currentHintLevel = 0;
+let maxHintsForScenario = 0;
+let displayedHints = []; // Track which hints are currently displayed
+
+// Enhanced loadScenario function - UPDATE your existing function
+async function loadScenario(scenarioId) {
+    // Load scenario data from CSV/KQL files
+    const scenarioData = await window.dataLoader.loadScenarioData(scenarioId);
+    if (!scenarioData) {
+        console.error('Failed to load scenario:', scenarioId);
+        return;
+    }
+
+    const metadata = scenarioData.metadata;
+    
+    // Update scenario details in UI
+    document.getElementById('scenario-title').textContent = metadata.title;
+    document.getElementById('scenario-platform').textContent = metadata.platform;
+    document.getElementById('scenario-difficulty').textContent = metadata.difficulty;
+    document.getElementById('scenario-duration').textContent = metadata.duration;
+    document.getElementById('scenario-points').textContent = metadata.points + ' XP';
+    document.getElementById('scenario-description').innerHTML = metadata.description;
+    
+    // Initialize progressive hints system
+    initializeProgressiveHints(metadata);
+    
+    // Start with empty query editor
+    document.getElementById('query-editor').value = `// Write your KQL query here to detect ${metadata.title.toLowerCase()}
+// Use the raw data table above to analyze the logs
+// 
+// Example structure:
+// SigninLogs
+// | where TimeGenerated > ago(24h)
+// | where [your conditions here]
+// | summarize [your analysis here]
+
+`;
+    
+    // Reset hint system for new scenario
+    resetHintSystem();
+    
+    // Hide hint panel and results
+    document.getElementById('hint-panel').classList.remove('show');
+    document.getElementById('results-workspace').style.display = 'none';
+    
+    // Update line numbers
+    updateLineNumbers();
+    
+    // Generate and populate dynamic table
+    populateDynamicTable(scenarioData);
+}
+
+// Initialize Progressive Hints System
+function initializeProgressiveHints(metadata) {
+    currentHintLevel = 0;
+    maxHintsForScenario = metadata.progressiveHints ? metadata.progressiveHints.length : 0;
+    displayedHints = [];
+    
+    console.log(`📝 Initialized hints: ${maxHintsForScenario} levels available`);
+    
+    // Update hint button text
+    updateHintButton();
+}
+
+// Reset hint system when loading new scenario
+function resetHintSystem() {
+    currentHintLevel = 0;
+    displayedHints = [];
+    const hintPanel = document.getElementById('hint-panel');
+    hintPanel.innerHTML = ''; // Clear existing hints
+    hintPanel.classList.remove('show');
+}
+
+// FIXED: Enhanced toggleHint function - now stacks hints
+function toggleHint() {
+    const hintPanel = document.getElementById('hint-panel');
+    const scenarioData = window.dataLoader.getCurrentData();
+    
+    if (!scenarioData || !scenarioData.metadata.progressiveHints) {
+        console.error('No progressive hints available for this scenario');
+        return;
+    }
+    
+    const hints = scenarioData.metadata.progressiveHints;
+    
+    // If panel is hidden, show first hint
+    if (!hintPanel.classList.contains('show')) {
+        currentHintLevel = 1;
+        displayedHints = [hints[0]]; // Start with first hint
+        displayStackedHints();
+        hintPanel.classList.add('show');
+    } else {
+        // Panel is visible, hide it
+        hintPanel.classList.remove('show');
+    }
+    
+    updateHintButton();
+}
+
+// FIXED: Show next hint in progression (stacking approach)
+function showNextHint() {
+    const scenarioData = window.dataLoader.getCurrentData();
+    const hints = scenarioData.metadata.progressiveHints;
+    
+    if (currentHintLevel < hints.length) {
+        currentHintLevel++;
+        displayedHints.push(hints[currentHintLevel - 1]); // Add new hint to stack
+        displayStackedHints(); // Re-render all hints
+        updateHintButton();
+        
+        // Smooth scroll to the new hint
+        setTimeout(() => {
+            const newHint = document.querySelector('.hint-item:last-child');
+            if (newHint) {
+                newHint.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }
+        }, 100);
+    }
+}
+
+// NEW: Display all hints in a stacked format
+function displayStackedHints() {
+    const hintPanel = document.getElementById('hint-panel');
+    
+    let hintsHTML = `
+        <div class="hints-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(255, 193, 7, 0.3);">
+            <div class="hint-title">
+                <span>💡</span>
+                <span>Progressive Hints (${currentHintLevel}/${maxHintsForScenario})</span>
+            </div>
+            <div style="color: #856404; font-size: 0.9rem; margin-top: 0.5rem;">
+                🎯 Each hint builds on the previous ones - follow them in order for best results!
+            </div>
+        </div>
+    `;
+    
+    // Add each displayed hint as a separate block
+    displayedHints.forEach((hint, index) => {
+        const hintNumber = index + 1;
+        const isLatest = index === displayedHints.length - 1;
+        
+        hintsHTML += `
+            <div class="hint-item ${isLatest ? 'hint-latest' : ''}" style="
+                margin-bottom: 1.5rem;
+                padding: 1.25rem;
+                background: ${isLatest ? 'rgba(255, 193, 7, 0.15)' : 'rgba(255, 193, 7, 0.08)'};
+                border-radius: 8px;
+                border-left: 4px solid ${isLatest ? '#ffc107' : 'rgba(255, 193, 7, 0.4)'};
+                ${isLatest ? 'animation: hintGlow 0.5s ease;' : ''}
+            ">
+                <div class="hint-step-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                    <span style="
+                        background: ${isLatest ? '#ffc107' : 'rgba(255, 193, 7, 0.6)'};
+                        color: ${isLatest ? '#fff' : '#856404'};
+                        border-radius: 50%;
+                        width: 24px; height: 24px;
+                        display: flex; align-items: center; justify-content: center;
+                        font-size: 0.85rem; font-weight: 600;
+                        flex-shrink: 0;
+                    ">${hintNumber}</span>
+                    <h4 style="color: #856404; margin: 0; font-weight: 600; font-size: 1rem;">
+                        ${hint.title}
+                    </h4>
+                </div>
+                
+                <div class="hint-content" style="color: #856404; line-height: 1.6; margin-bottom: 1rem;">
+                    <p style="margin: 0 0 1rem 0;">${hint.content}</p>
+                </div>
+                
+                ${hint.example ? `
+                    <div class="hint-example" style="background: rgba(255, 255, 255, 0.7); border-radius: 6px; padding: 1rem; border-left: 3px solid #ffc107;">
+                        <strong style="color: #856404; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            💻 KQL Example:
+                        </strong>
+                        <code style="
+                            background: #f8f9fa; color: #1e3d6f; padding: 0.75rem; border-radius: 4px;
+                            font-family: 'Consolas', 'Monaco', monospace; font-size: 0.9rem; line-height: 1.4;
+                            border: 1px solid #e9ecef; display: block; overflow-x: auto;
+                        ">${hint.example}</code>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    });
+    
+    // Add action buttons at the bottom
+    hintsHTML += `
+        <div class="hint-actions" style="
+            margin-top: 1.5rem; padding-top: 1.5rem; 
+            border-top: 2px solid rgba(255, 193, 7, 0.3);
+            display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
+        ">
+            ${currentHintLevel < maxHintsForScenario ? `
+                <button class="btn btn-warning" onclick="showNextHint()" style="
+                    font-size: 0.9rem; padding: 0.65rem 1.25rem; 
+                    background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+                    border: none; border-radius: 8px; color: white; font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+                    transition: all 0.3s ease;
+                ">
+                    🔍 Get Next Hint (${currentHintLevel + 1}/${maxHintsForScenario})
+                </button>
+            ` : `
+                <div style="
+                    background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+                    color: white; padding: 0.75rem 1.25rem; border-radius: 8px;
+                    font-weight: 600; font-size: 0.9rem;
+                    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+                ">
+                    ✅ All hints revealed! You're ready to write your query.
+                </div>
+            `}
+            
+            <button class="btn btn-secondary" onclick="toggleHint()" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                ❌ Hide All Hints
+            </button>
+            
+            <button class="btn" onclick="showKQLWalkthrough()" style="
+                background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%);
+                color: white; border: none; border-radius: 8px;
+                font-size: 0.85rem; padding: 0.5rem 1rem; font-weight: 600;
+                box-shadow: 0 2px 8px rgba(44, 90, 160, 0.3);
+            ">
+                🧠 Show KQL Walkthrough
+            </button>
+        </div>
+    `;
+    
+    hintPanel.innerHTML = hintsHTML;
+}
+
+// Update hint button text based on current state
+function updateHintButton() {
+    const hintButton = document.querySelector('button[onclick="toggleHint()"]');
+    if (!hintButton) return;
+    
+    const hintPanel = document.getElementById('hint-panel');
+    
+    if (!hintPanel.classList.contains('show')) {
+        // Panel is hidden
+        if (currentHintLevel === 0) {
+            hintButton.innerHTML = `💡 Get Hint (1/${maxHintsForScenario})`;
+        } else {
+            hintButton.innerHTML = `💡 Show Hints (${currentHintLevel}/${maxHintsForScenario})`;
+        }
+    } else {
+        // Panel is shown
+        hintButton.innerHTML = `💡 Hide Hints`;
+    }
+}
+
+// FIXED: Working KQL Walkthrough function
+function showKQLWalkthrough() {
+    console.log('🧠 showKQLWalkthrough called');
+    
+    const scenarioData = window.dataLoader.getCurrentData();
+    
+    if (!scenarioData) {
+        showNotification('❌ No scenario data available', 'warning');
+        return;
+    }
+    
+    // For password spray specifically, create enhanced walkthrough
+    if (selectedScenario === 'password-spray') {
+        showPasswordSprayWalkthrough(scenarioData);
+    } else if (scenarioData.metadata.walkthrough) {
+        // Use scenario-specific walkthrough if available
+        const walkthrough = scenarioData.metadata.walkthrough;
+        const modal = createWalkthroughModal(walkthrough, scenarioData.solution);
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+    } else {
+        showNotification('❌ No walkthrough available for this scenario yet', 'warning');
+    }
+}
+
+// NEW: Enhanced Password Spray Walkthrough with detailed explanation
+function showPasswordSprayWalkthrough(scenarioData) {
+    const modal = document.createElement('div');
+    modal.className = 'walkthrough-modal-overlay';
+    modal.id = 'walkthrough-modal-overlay';
+    
+    modal.innerHTML = `
+        <div class="walkthrough-modal" style="
+            background: white; border-radius: 16px; padding: 2rem;
+            max-width: 900px; width: 95%; max-height: 95vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        ">
+            <!-- Header -->
+            <div class="walkthrough-header" style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #e9ecef; padding-bottom: 1.5rem;">
+                <h2 style="color: #2c5aa0; margin-bottom: 0.5rem; font-size: 2rem; font-weight: 700;">
+                    🧠 Password Spray Attack: KQL Detective Work
+                </h2>
+                <p style="color: #666; font-size: 1.1rem; margin: 0; line-height: 1.5;">
+                    Let's understand WHY we built this query step-by-step and how each piece solves the puzzle
+                </p>
+            </div>
+            
+            <!-- The Problem Section -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+                <h3 style="color: #c62828; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🎯</span> The Challenge: What Makes Password Spray Attacks Tricky?
+                </h3>
+                <div style="color: #c62828; line-height: 1.6;">
+                    <p><strong>Password spray attacks are sneaky because:</strong></p>
+                    <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                        <li><strong>Low noise per user</strong> - Only 1-3 attempts per account (avoiding lockouts)</li>
+                        <li><strong>High user coverage</strong> - Targets 50-100+ users with common passwords</li>
+                        <li><strong>Spread over time</strong> - Can happen over hours/days to avoid detection</li>
+                        <li><strong>Mixed with legitimate traffic</strong> - Blends in with normal failed logins</li>
+                    </ul>
+                    <p><strong>🔍 Our detective work:</strong> Find patterns that show <em>1 source → many targets → systematic behavior</em></p>
+                </div>
+            </div>
+            
+            <!-- The Solution Query -->
+            <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
+                <h3 style="color: #2c5aa0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📝</span> Our Detective Query
+                </h3>
+                <pre style="background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 0; font-size: 0.9rem; line-height: 1.4;"><code>SigninLogs
+| where TimeGenerated > ago(24h)        // 🕐 Recent activity only
+| where ResultType != 0                 // ❌ Failed logins only  
+| summarize                            // 📊 Group and analyze
+    UniqueUsers = dcount(UserPrincipalName),    // 👥 Count unique targets
+    FailedAttempts = count(),                   // 🔢 Total attempts
+    TargetedUsers = make_set(UserPrincipalName), // 📋 List of victims
+    FirstAttempt = min(TimeGenerated),          // ⏰ Attack start
+    LastAttempt = max(TimeGenerated)            // ⏰ Attack end
+    by IPAddress, Location                      // 🌍 Group by source
+| where UniqueUsers >= 5               // ⚠️ Suspicious threshold
+| extend AttackDuration = LastAttempt - FirstAttempt,  // ⏱️ Time span
+         AverageAttemptsPerUser = FailedAttempts / UniqueUsers // 📈 Intensity
+| order by UniqueUsers desc, FailedAttempts desc       // 📊 Most suspicious first</code></pre>
+            </div>
+            
+            <!-- Step by Step Reasoning -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: #2c5aa0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🔍</span> Step-by-Step Detective Reasoning
+                </h3>
+                
+                <!-- Step 1 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2c5aa0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #2c5aa0; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">1</span>
+                        <h4 style="margin: 0; color: #2c5aa0;">Start with the Data Source</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #e3f2fd; padding: 0.2rem 0.4rem; border-radius: 3px;">SigninLogs</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> This table contains every authentication attempt - successful and failed. It's our goldmine of evidence.</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Like reviewing security camera footage - we need to see all the attempts, not just the successes.</p>
+                </div>
+                
+                <!-- Step 2 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #ff9800;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #ff9800; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">2</span>
+                        <h4 style="margin: 0; color: #ff9800;">Focus on Recent Activity</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #fff3e0; padding: 0.2rem 0.4rem; border-radius: 3px;">| where TimeGenerated > ago(24h)</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Password spray campaigns happen in concentrated timeframes. Old data dilutes our analysis.</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Fresh crime scenes have the clearest evidence. The <code>ago()</code> function is like setting the investigation timeframe.</p>
+                </div>
+                
+                <!-- Step 3 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f44336;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #f44336; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">3</span>
+                        <h4 style="margin: 0; color: #f44336;">Filter for Suspicious Activity</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #ffebee; padding: 0.2rem 0.4rem; border-radius: 3px;">| where ResultType != 0</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Successful logins (ResultType = 0) are normal. We're hunting for patterns in the failures.</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> We're looking for "attempts" not "successes" - like studying failed break-in attempts to understand burglar patterns.</p>
+                </div>
+                
+                <!-- Step 4 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4caf50;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #4caf50; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">4</span>
+                        <h4 style="margin: 0; color: #4caf50;">The Magic: Group by Attack Source</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #e8f5e8; padding: 0.2rem 0.4rem; border-radius: 3px;">| summarize ... by IPAddress, Location</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> This flips our perspective from "per user" to "per attacker" - revealing the spray pattern!</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Instead of asking "who got attacked?" we ask "who is doing the attacking?" - this reveals systematic behavior.</p>
+                </div>
+                
+                <!-- Step 5 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #9c27b0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #9c27b0; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">5</span>
+                        <h4 style="margin: 0; color: #9c27b0;">Count the Evidence</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #f3e5f5; padding: 0.2rem 0.4rem; border-radius: 3px;">UniqueUsers = dcount(UserPrincipalName)</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> <code>dcount()</code> counts unique users per IP. High numbers = spray pattern!</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> One person failing to login 50 times = locked out user. One IP attempting 50 different users = attacker!</p>
+                </div>
+                
+                <!-- Step 6 -->
+                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #795548;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <span style="background: #795548; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">6</span>
+                        <h4 style="margin: 0; color: #795548;">Set the Trap (Threshold)</h4>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #efebe9; padding: 0.2rem 0.4rem; border-radius: 3px;">| where UniqueUsers >= 5</code></p>
+                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Legitimate users rarely try 5+ different accounts. This filters out noise and focuses on systematic attacks.</p>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> This is our "smoking gun" threshold - normal behavior vs attack behavior becomes clear.</p>
+                </div>
+            </div>
+            
+            <!-- What the Results Mean -->
+            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4caf50;">
+                <h3 style="color: #2e7d32; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🎓</span> What Our Results Tell Us
+                </h3>
+                <div style="color: #2e7d32; line-height: 1.6;">
+                    <p><strong>When our query finds results, here's what each field reveals:</strong></p>
+                    <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                        <li><strong>IPAddress + UniqueUsers ≥ 5:</strong> "This IP is systematically targeting multiple accounts"</li>
+                        <li><strong>FailedAttempts:</strong> "Total volume of attack attempts from this source"</li>
+                        <li><strong>TargetedUsers:</strong> "Exact list of victims - helps with incident response"</li>
+                        <li><strong>AttackDuration:</strong> "How long the campaign lasted - indicates planning"</li>
+                        <li><strong>AverageAttemptsPerUser:</strong> "Intensity per victim - shows restraint to avoid lockouts"</li>
+                    </ul>
+                    <p><strong>🎯 The pattern we're detecting:</strong> <em>Systematic, low-intensity, broad-target authentication attacks</em></p>
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div style="text-align: center; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="copyQueryToClipboard()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                    📋 Copy This Query
+                </button>
+                <button class="btn btn-secondary" onclick="closeWalkthroughModal()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                    ✅ Got It!
+                </button>
+            </div>
+        </div>
+    `;
+    
+    // Add modal styles
+    modal.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center;
+        z-index: 9999; animation: fadeIn 0.3s ease;
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Add click outside to close
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeWalkthroughModal();
+        }
+    });
+}
+
+// Close walkthrough modal
+function closeWalkthroughModal() {
+    const modal = document.getElementById('walkthrough-modal-overlay');
+    if (modal) {
+        modal.remove();
+    }
+    console.log('✅ Walkthrough modal closed');
+}
+
+// Copy query to clipboard
+function copyQueryToClipboard() {
+    const scenarioData = window.dataLoader.getCurrentData();
+    if (scenarioData && scenarioData.solution) {
+        navigator.clipboard.writeText(scenarioData.solution).then(() => {
+            showNotification('📋 Query copied to clipboard!', 'success');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = scenarioData.solution;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            showNotification('📋 Query copied to clipboard!', 'success');
+        });
+    }
+}
+
+// Add hint glow animation to CSS
+const hintStyles = document.createElement('style');
+hintStyles.textContent = `
+    @keyframes hintGlow {
+        0% { transform: translateX(-5px); box-shadow: 0 0 0 rgba(255, 193, 7, 0); }
+        50% { transform: translateX(0); box-shadow: 0 4px 16px rgba(255, 193, 7, 0.3); }
+        100% { transform: translateX(0); box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2); }
+    }
+`;
+document.head.appendChild(hintStyles);

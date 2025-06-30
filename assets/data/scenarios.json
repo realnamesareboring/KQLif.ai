@@ -1,58 +1,190 @@
 {
-    "scenarios": {
-      "password-spray": {
-        "title": "Password Spray Attack Detection",
-        "platform": "Microsoft Entra ID",
-        "difficulty": "Beginner - Intermediate",
-        "duration": "15-20 minutes",
-        "points": 250,
-        "xpReward": 250,
-        "description": "<strong>Scenario:</strong> A Security Operations Center has detected unusual authentication patterns across multiple user accounts. Your task is to identify a potential password spray attack using KQL queries against Microsoft Entra ID sign-in logs.<br><br><strong>Learning Objectives:</strong> Master aggregation functions, time windows, IP address analysis, and user behavior correlation.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
-        "hint": "Start by filtering the SigninLogs table for failed authentication attempts (ResultType != 0). Then group by source IP address and count the number of unique users targeted.",
-        "dataFile": "signin-logs.csv",
-        "solutionFile": "solution.kql",
-        "tableName": "SigninLogs",
-        "expectedResults": {
-          "minRows": 1,
-          "suspiciousThreshold": 5,
-          "successCriteria": "Identifies IP addresses targeting multiple users"
+  "scenarios": {
+    "password-spray": {
+      "title": "Password Spray Attack Detection",
+      "platform": "Microsoft Entra ID",
+      "difficulty": "Beginner - Intermediate",
+      "duration": "15-20 minutes",
+      "points": 250,
+      "xpReward": 250,
+      "description": "<strong>Scenario:</strong> A Security Operations Center has detected unusual authentication patterns across multiple user accounts. Your task is to identify a potential password spray attack using KQL queries against Microsoft Entra ID sign-in logs.<br><br><strong>Learning Objectives:</strong> Master aggregation functions, time windows, IP address analysis, and user behavior correlation.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
+      "progressiveHints": [
+        {
+          "level": 1,
+          "title": "🎯 Start Simple",
+          "content": "Begin by exploring the SigninLogs table. Look for authentication failures by filtering where ResultType is not equal to 0. This will show you all the failed login attempts.",
+          "example": "SigninLogs | where ResultType != 0"
+        },
+        {
+          "level": 2, 
+          "title": "📊 Group Your Data",
+          "content": "Password spray attacks target multiple users from the same IP address. Use the 'summarize' operator to group failed logins by IP address and count unique users.",
+          "example": "| summarize UniqueUsers = dcount(UserPrincipalName) by IPAddress"
+        },
+        {
+          "level": 3,
+          "title": "🔍 Add More Metrics",
+          "content": "Enhance your analysis by adding total failed attempts, the list of targeted users, and time ranges. Use make_set() to collect usernames and min/max for time windows.",
+          "example": "| summarize UniqueUsers = dcount(UserPrincipalName), FailedAttempts = count(), TargetedUsers = make_set(UserPrincipalName) by IPAddress"
+        },
+        {
+          "level": 4,
+          "title": "⚡ Set Thresholds",
+          "content": "Password sprays typically target 5+ users. Add a filter after your summarize to focus on suspicious activity with 'where UniqueUsers >= 5'.",
+          "example": "| where UniqueUsers >= 5"
+        },
+        {
+          "level": 5,
+          "title": "🎯 Final Polish",
+          "content": "Sort your results to show the most suspicious IPs first using 'order by UniqueUsers desc'. Also consider adding time windows and calculating attack duration for complete analysis.",
+          "example": "| order by UniqueUsers desc, FailedAttempts desc"
         }
+      ],
+      "walkthrough": {
+        "title": "🧠 Understanding the Password Spray Detection Query",
+        "introduction": "Let's break down this KQL query step by step to understand how it detects password spray attacks:",
+        "steps": [
+          {
+            "operator": "SigninLogs",
+            "explanation": "This specifies our data source - the Microsoft Entra ID sign-in logs table containing authentication events.",
+            "purpose": "Starting point for our analysis"
+          },
+          {
+            "operator": "| where TimeGenerated > ago(24h)",
+            "explanation": "Filters events to only the last 24 hours. The 'ago()' function calculates time relative to now.",
+            "purpose": "Focus on recent attack activity"
+          },
+          {
+            "operator": "| where ResultType != 0",
+            "explanation": "Filters for failed authentication attempts. ResultType 0 = success, any other value = failure.",
+            "purpose": "Only analyze failed login attempts"
+          },
+          {
+            "operator": "| summarize",
+            "explanation": "Groups and aggregates data based on specified fields. This is the core of our analysis.",
+            "purpose": "Transform raw logs into meaningful insights"
+          },
+          {
+            "operator": "UniqueUsers = dcount(UserPrincipalName)",
+            "explanation": "Counts distinct users targeted. 'dcount()' eliminates duplicates, giving us unique user count per IP.",
+            "purpose": "Identify IPs targeting multiple users"
+          },
+          {
+            "operator": "FailedAttempts = count()",
+            "explanation": "Counts total failed attempts per IP address. Simple count of all matching records.",
+            "purpose": "Measure attack intensity"
+          },
+          {
+            "operator": "TargetedUsers = make_set(UserPrincipalName)",
+            "explanation": "Creates an array of all targeted usernames. 'make_set()' collects unique values into a list.",
+            "purpose": "See exactly which users were targeted"
+          },
+          {
+            "operator": "by IPAddress, Location",
+            "explanation": "Groups results by these fields. Each unique combination gets its own summary row.",
+            "purpose": "Separate analysis per attacking IP"
+          },
+          {
+            "operator": "| where UniqueUsers >= 5",
+            "explanation": "Filters for IPs targeting 5+ users. This threshold indicates potential spray attacks.",
+            "purpose": "Focus on suspicious activity patterns"
+          },
+          {
+            "operator": "| order by UniqueUsers desc",
+            "explanation": "Sorts results by unique user count, highest first. 'desc' means descending order.",
+            "purpose": "Show most suspicious IPs at the top"
+          }
+        ],
+        "keyTakeaways": [
+          "🎯 **Pattern Recognition**: Password sprays create a signature of 1 IP → Many Users → Few attempts per user",
+          "📊 **Aggregation Power**: KQL's summarize operator transforms raw logs into actionable intelligence", 
+          "⚡ **Threshold Setting**: Using >= 5 users helps reduce false positives while catching real attacks",
+          "🔍 **Multi-dimensional Analysis**: Combining user count, attempt count, and time windows provides complete picture"
+        ]
       },
-      "brute-force": {
-        "title": "Brute Force Attack Analysis", 
-        "platform": "Microsoft Entra ID",
-        "difficulty": "Beginner",
-        "duration": "10-15 minutes",
-        "points": 200,
-        "xpReward": 200,
-        "description": "<strong>Scenario:</strong> Multiple failed login attempts against a single user account have been detected. Investigate potential brute force attacks targeting high-value accounts.<br><br><strong>Learning Objectives:</strong> Basic filtering, counting operations, and user-focused analysis.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
-        "hint": "Focus on a single user account and count failed login attempts over time. Look for patterns that indicate automated attacks.",
-        "dataFile": "signin-logs.csv",
-        "solutionFile": "solution.kql", 
-        "tableName": "SigninLogs",
-        "expectedResults": {
-          "minRows": 1,
-          "suspiciousThreshold": 10,
-          "successCriteria": "Identifies users with excessive failed login attempts"
+      "dataFile": "signin-logs.csv",
+      "solutionFile": "solution.kql",
+      "tableName": "SigninLogs",
+      "expectedResults": {
+        "minRows": 1,
+        "suspiciousThreshold": 5,
+        "successCriteria": "Identifies IP addresses targeting multiple users"
+      }
+    },
+    "brute-force": {
+      "title": "Brute Force Attack Analysis", 
+      "platform": "Microsoft Entra ID",
+      "difficulty": "Beginner",
+      "duration": "10-15 minutes",
+      "points": 200,
+      "xpReward": 200,
+      "description": "<strong>Scenario:</strong> Multiple failed login attempts against a single user account have been detected. Investigate potential brute force attacks targeting high-value accounts.<br><br><strong>Learning Objectives:</strong> Basic filtering, counting operations, and user-focused analysis.<br><br><strong>Data Sources:</strong> SigninLogs table from Microsoft Entra ID",
+      "progressiveHints": [
+        {
+          "level": 1,
+          "title": "🎯 Focus on Failures",
+          "content": "Start by filtering for failed login attempts using ResultType != 0, then focus on a specific user account to analyze their failed attempts.",
+          "example": "SigninLogs | where ResultType != 0"
+        },
+        {
+          "level": 2,
+          "title": "👤 Target Specific Users", 
+          "content": "Look for patterns where a single user has many failed attempts. Use 'summarize' to count failures per user account.",
+          "example": "| summarize FailedAttempts = count() by UserPrincipalName"
+        },
+        {
+          "level": 3,
+          "title": "📊 Add Time Analysis",
+          "content": "Brute force attacks happen over time. Add time windows and source IP information to your analysis.",
+          "example": "| summarize FailedAttempts = count(), IPAddresses = make_set(IPAddress) by UserPrincipalName"
+        },
+        {
+          "level": 4,
+          "title": "⚡ Set Brute Force Threshold",
+          "content": "Typically 10+ failed attempts indicate brute force. Filter for users with high failure counts.",
+          "example": "| where FailedAttempts >= 10"
+        },
+        {
+          "level": 5,
+          "title": "🎯 Sort and Prioritize",
+          "content": "Order results by failure count to see the most attacked accounts first. This helps prioritize incident response.",
+          "example": "| order by FailedAttempts desc"
         }
+      ],
+      "walkthrough": {
+        "title": "🧠 Understanding Brute Force Detection",
+        "introduction": "This query identifies accounts under brute force attack by analyzing failed login patterns:",
+        "steps": [
+          {
+            "operator": "| where ResultType != 0",
+            "explanation": "Filters for authentication failures only",
+            "purpose": "Focus on failed login attempts"
+          },
+          {
+            "operator": "| summarize FailedAttempts = count()",
+            "explanation": "Counts total failures per user account",
+            "purpose": "Quantify attack intensity per user"
+          },
+          {
+            "operator": "| where FailedAttempts >= 10",
+            "explanation": "Threshold for potential brute force activity",
+            "purpose": "Filter for suspicious activity levels"
+          }
+        ],
+        "keyTakeaways": [
+          "🎯 **Volume Detection**: High failure counts indicate automated attacks",
+          "👤 **User-Centric**: Unlike spray attacks, brute force focuses on specific accounts",
+          "⏰ **Time Patterns**: Real brute force shows rapid, repeated attempts"
+        ]
       },
-      "s3-ransomware": {
-        "title": "AWS S3 Ransomware via SSE-C",
-        "platform": "Amazon S3", 
-        "difficulty": "Advanced",
-        "duration": "30-40 minutes",
-        "points": 500,
-        "xpReward": 500,
-        "description": "<strong>Scenario:</strong> Threat actor 'Codefinger' has been using compromised AWS credentials to encrypt S3 bucket data using Server-Side Encryption with Customer-Provided Keys (SSE-C).<br><br><strong>Learning Objectives:</strong> Advanced encryption analysis, native service abuse detection, API call correlation.<br><br><strong>Data Sources:</strong> AWS CloudTrail, S3 Access Logs",
-        "hint": "Look for unusual PutObject operations with SSE-C parameters, followed by lifecycle policy changes and ransom note uploads.",
-        "dataFile": "cloudtrail-logs.csv",
-        "solutionFile": "solution.kql",
-        "tableName": "AWSCloudTrail", 
-        "expectedResults": {
-          "minRows": 1,
-          "suspiciousThreshold": 3,
-          "successCriteria": "Identifies encryption operations and policy changes"
-        }
+      "dataFile": "signin-logs.csv",
+      "solutionFile": "solution.kql", 
+      "tableName": "SigninLogs",
+      "expectedResults": {
+        "minRows": 1,
+        "suspiciousThreshold": 10,
+        "successCriteria": "Identifies users with excessive failed login attempts"
       }
     }
   }
+}
