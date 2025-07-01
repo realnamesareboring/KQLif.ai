@@ -630,38 +630,105 @@ document.addEventListener('DOMContentLoaded', async function() {
                 message: results.length === 0 ? "no attack patterns were detected." : "Good detection!" 
             };
         }
-// FIXED: Progressive Hints System (Stacking) + Working Walkthrough
-// Replace the hint-related functions in your script.js with these updated versions
+// =============================================================================
+// 🚀 ENHANCED CHALLENGE SYSTEM - APPEND-ONLY VERSION
+// =============================================================================
+// Safe to append to your existing script.js file
+// No modifications to existing functions required!
 
-// Global state for hints
-let currentHintLevel = 0;
-let maxHintsForScenario = 0;
-let displayedHints = []; // Track which hints are currently displayed
+// Enhanced global state (won't conflict with existing)
+let enhancedChallengeContent = null;
+let enhancedHintLevel = 0;
+let enhancedMaxHints = 0;
+let enhancedDisplayedHints = [];
+let useEnhancedSystem = true; // Set to false to use old system
 
-// Enhanced loadScenario function - UPDATE your existing function
-async function loadScenario(scenarioId) {
-    // Load scenario data from CSV/KQL files
-    const scenarioData = await window.dataLoader.loadScenarioData(scenarioId);
-    if (!scenarioData) {
-        console.error('Failed to load scenario:', scenarioId);
-        return;
+// =============================================================================
+// NEW: Enhanced Challenge Content Loading
+// =============================================================================
+
+async function loadEnhancedChallengeContent(scenarioId) {
+    try {
+        console.log(`🚀 Loading enhanced challenge content for: ${scenarioId}`);
+        
+        // Try to load from cache first
+        if (enhancedChallengeContent && enhancedChallengeContent.challengeId === scenarioId) {
+            console.log('✅ Using cached enhanced challenge content');
+            return enhancedChallengeContent;
+        }
+        
+        // Load from JSON file
+        const response = await fetch(`assets/data/scenarios/${scenarioId}/${scenarioId}.json`);
+        if (!response.ok) {
+            throw new Error(`Enhanced challenge content not found: ${response.status}`);
+        }
+        
+        const challengeContent = await response.json();
+        console.log(`✅ Loaded enhanced challenge content for '${scenarioId}':`, {
+            hints: challengeContent.progressiveHints?.length || 0,
+            walkthrough: challengeContent.walkthrough ? 'available' : 'missing'
+        });
+        
+        // Cache the loaded content
+        enhancedChallengeContent = challengeContent;
+        return challengeContent;
+        
+    } catch (error) {
+        console.error(`❌ Failed to load enhanced challenge content for '${scenarioId}':`, error);
+        
+        // Return fallback content if JSON file doesn't exist
+        return {
+            challengeId: scenarioId,
+            title: "Enhanced Challenge Content",
+            progressiveHints: [
+                {
+                    level: 1,
+                    title: "💡 Enhanced Hint",
+                    content: "This challenge doesn't have enhanced content yet. Using fallback hint system.",
+                    example: "// Start with basic filtering and analysis"
+                }
+            ],
+            walkthrough: null
+        };
     }
+}
 
-    const metadata = scenarioData.metadata;
+// =============================================================================
+// NEW: Enhanced Scenario Loading (wraps existing loadScenario)
+// =============================================================================
+
+async function loadEnhancedScenario(scenarioId) {
+    if (!useEnhancedSystem) {
+        // Use original system
+        return loadScenario(scenarioId);
+    }
     
-    // Update scenario details in UI
-    document.getElementById('scenario-title').textContent = metadata.title;
-    document.getElementById('scenario-platform').textContent = metadata.platform;
-    document.getElementById('scenario-difficulty').textContent = metadata.difficulty;
-    document.getElementById('scenario-duration').textContent = metadata.duration;
-    document.getElementById('scenario-points').textContent = metadata.points + ' XP';
-    document.getElementById('scenario-description').innerHTML = metadata.description;
-    
-    // Initialize progressive hints system
-    initializeProgressiveHints(metadata);
-    
-    // Start with empty query editor
-    document.getElementById('query-editor').value = `// Write your KQL query here to detect ${metadata.title.toLowerCase()}
+    try {
+        // Load original scenario data first (existing functionality)
+        const scenarioData = await window.dataLoader.loadScenarioData(scenarioId);
+        if (!scenarioData) {
+            console.error('Failed to load scenario:', scenarioId);
+            return;
+        }
+
+        // Load enhanced challenge-specific content
+        const challengeContent = await loadEnhancedChallengeContent(scenarioId);
+        
+        const metadata = scenarioData.metadata;
+        
+        // Update scenario details in UI (same as original)
+        document.getElementById('scenario-title').textContent = metadata.title;
+        document.getElementById('scenario-platform').textContent = metadata.platform;
+        document.getElementById('scenario-difficulty').textContent = metadata.difficulty;
+        document.getElementById('scenario-duration').textContent = metadata.duration;
+        document.getElementById('scenario-points').textContent = metadata.points + ' XP';
+        document.getElementById('scenario-description').innerHTML = metadata.description;
+        
+        // Initialize enhanced progressive hints system
+        initializeEnhancedHints(challengeContent);
+        
+        // Start with empty query editor
+        document.getElementById('query-editor').value = `// Write your KQL query here to detect ${metadata.title.toLowerCase()}
 // Use the raw data table above to analyze the logs
 // 
 // Example structure:
@@ -671,82 +738,99 @@ async function loadScenario(scenarioId) {
 // | summarize [your analysis here]
 
 `;
-    
-    // Reset hint system for new scenario
-    resetHintSystem();
-    
-    // Hide hint panel and results
-    document.getElementById('hint-panel').classList.remove('show');
-    document.getElementById('results-workspace').style.display = 'none';
-    
-    // Update line numbers
-    updateLineNumbers();
-    
-    // Generate and populate dynamic table
-    populateDynamicTable(scenarioData);
+        
+        // Reset enhanced hint system for new scenario
+        resetEnhancedHintSystem();
+        
+        // Hide hint panel and results
+        document.getElementById('hint-panel').classList.remove('show');
+        document.getElementById('results-workspace').style.display = 'none';
+        
+        // Update line numbers
+        updateLineNumbers();
+        
+        // Generate and populate dynamic table
+        populateDynamicTable(scenarioData);
+        
+        console.log(`✅ Enhanced scenario '${scenarioId}' loaded successfully`);
+        
+    } catch (error) {
+        console.error('Error loading enhanced scenario:', error);
+        showNotification('❌ Failed to load enhanced scenario content', 'warning');
+        // Fallback to original system
+        loadScenario(scenarioId);
+    }
 }
 
-// Initialize Progressive Hints System
-function initializeProgressiveHints(metadata) {
-    currentHintLevel = 0;
-    maxHintsForScenario = metadata.progressiveHints ? metadata.progressiveHints.length : 0;
-    displayedHints = [];
+// =============================================================================
+// NEW: Enhanced Progressive Hints System
+// =============================================================================
+
+function initializeEnhancedHints(challengeContent) {
+    enhancedHintLevel = 0;
+    enhancedMaxHints = challengeContent.progressiveHints ? challengeContent.progressiveHints.length : 0;
+    enhancedDisplayedHints = [];
     
-    console.log(`📝 Initialized hints: ${maxHintsForScenario} levels available`);
+    console.log(`📝 Initialized enhanced hints: ${enhancedMaxHints} levels available`);
     
-    // Update hint button text
-    updateHintButton();
+    // Update hint button to use enhanced system
+    updateEnhancedHintButton();
 }
 
-// Reset hint system when loading new scenario
-function resetHintSystem() {
-    currentHintLevel = 0;
-    displayedHints = [];
+function resetEnhancedHintSystem() {
+    enhancedHintLevel = 0;
+    enhancedDisplayedHints = [];
     const hintPanel = document.getElementById('hint-panel');
-    hintPanel.innerHTML = ''; // Clear existing hints
+    hintPanel.innerHTML = '';
     hintPanel.classList.remove('show');
 }
 
-// FIXED: Enhanced toggleHint function - now stacks hints
-function toggleHint() {
-    const hintPanel = document.getElementById('hint-panel');
-    const scenarioData = window.dataLoader.getCurrentData();
+function toggleEnhancedHint() {
+    if (!useEnhancedSystem) {
+        return toggleHint(); // Use original system
+    }
     
-    if (!scenarioData || !scenarioData.metadata.progressiveHints) {
-        console.error('No progressive hints available for this scenario');
+    const hintPanel = document.getElementById('hint-panel');
+    
+    if (!enhancedChallengeContent || !enhancedChallengeContent.progressiveHints) {
+        console.error('No enhanced progressive hints available for this scenario');
+        showNotification('❌ No enhanced hints available for this challenge', 'warning');
         return;
     }
     
-    const hints = scenarioData.metadata.progressiveHints;
+    const hints = enhancedChallengeContent.progressiveHints;
     
     // If panel is hidden, show first hint
     if (!hintPanel.classList.contains('show')) {
-        currentHintLevel = 1;
-        displayedHints = [hints[0]]; // Start with first hint
-        displayStackedHints();
+        enhancedHintLevel = 1;
+        enhancedDisplayedHints = [hints[0]]; // Start with first hint
+        displayEnhancedStackedHints();
         hintPanel.classList.add('show');
     } else {
         // Panel is visible, hide it
         hintPanel.classList.remove('show');
     }
     
-    updateHintButton();
+    updateEnhancedHintButton();
 }
 
-// FIXED: Show next hint in progression (stacking approach)
-function showNextHint() {
-    const scenarioData = window.dataLoader.getCurrentData();
-    const hints = scenarioData.metadata.progressiveHints;
+function showEnhancedNextHint() {
+    if (!enhancedChallengeContent || !enhancedChallengeContent.progressiveHints) {
+        console.error('No enhanced hints available');
+        return;
+    }
     
-    if (currentHintLevel < hints.length) {
-        currentHintLevel++;
-        displayedHints.push(hints[currentHintLevel - 1]); // Add new hint to stack
-        displayStackedHints(); // Re-render all hints
-        updateHintButton();
+    const hints = enhancedChallengeContent.progressiveHints;
+    
+    if (enhancedHintLevel < hints.length) {
+        enhancedHintLevel++;
+        enhancedDisplayedHints.push(hints[enhancedHintLevel - 1]); // Add new hint to stack
+        displayEnhancedStackedHints(); // Re-render all hints
+        updateEnhancedHintButton();
         
         // Smooth scroll to the new hint
         setTimeout(() => {
-            const newHint = document.querySelector('.hint-item:last-child');
+            const newHint = document.querySelector('.enhanced-hint-item:last-child');
             if (newHint) {
                 newHint.scrollIntoView({ 
                     behavior: 'smooth', 
@@ -757,15 +841,14 @@ function showNextHint() {
     }
 }
 
-// NEW: Display all hints in a stacked format
-function displayStackedHints() {
+function displayEnhancedStackedHints() {
     const hintPanel = document.getElementById('hint-panel');
     
     let hintsHTML = `
-        <div class="hints-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(255, 193, 7, 0.3);">
+        <div class="enhanced-hints-header" style="margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid rgba(255, 193, 7, 0.3);">
             <div class="hint-title">
                 <span>💡</span>
-                <span>Progressive Hints (${currentHintLevel}/${maxHintsForScenario})</span>
+                <span>Enhanced Progressive Hints (${enhancedHintLevel}/${enhancedMaxHints})</span>
             </div>
             <div style="color: #856404; font-size: 0.9rem; margin-top: 0.5rem;">
                 🎯 Each hint builds on the previous ones - follow them in order for best results!
@@ -774,20 +857,20 @@ function displayStackedHints() {
     `;
     
     // Add each displayed hint as a separate block
-    displayedHints.forEach((hint, index) => {
+    enhancedDisplayedHints.forEach((hint, index) => {
         const hintNumber = index + 1;
-        const isLatest = index === displayedHints.length - 1;
+        const isLatest = index === enhancedDisplayedHints.length - 1;
         
         hintsHTML += `
-            <div class="hint-item ${isLatest ? 'hint-latest' : ''}" style="
+            <div class="enhanced-hint-item ${isLatest ? 'enhanced-hint-latest' : ''}" style="
                 margin-bottom: 1.5rem;
                 padding: 1.25rem;
                 background: ${isLatest ? 'rgba(255, 193, 7, 0.15)' : 'rgba(255, 193, 7, 0.08)'};
                 border-radius: 8px;
                 border-left: 4px solid ${isLatest ? '#ffc107' : 'rgba(255, 193, 7, 0.4)'};
-                ${isLatest ? 'animation: hintGlow 0.5s ease;' : ''}
+                ${isLatest ? 'animation: enhancedHintGlow 0.5s ease;' : ''}
             ">
-                <div class="hint-step-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <div class="enhanced-hint-step-header" style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <span style="
                         background: ${isLatest ? '#ffc107' : 'rgba(255, 193, 7, 0.6)'};
                         color: ${isLatest ? '#fff' : '#856404'};
@@ -802,12 +885,12 @@ function displayStackedHints() {
                     </h4>
                 </div>
                 
-                <div class="hint-content" style="color: #856404; line-height: 1.6; margin-bottom: 1rem;">
+                <div class="enhanced-hint-content" style="color: #856404; line-height: 1.6; margin-bottom: 1rem;">
                     <p style="margin: 0 0 1rem 0;">${hint.content}</p>
                 </div>
                 
                 ${hint.example ? `
-                    <div class="hint-example" style="background: rgba(255, 255, 255, 0.7); border-radius: 6px; padding: 1rem; border-left: 3px solid #ffc107;">
+                    <div class="enhanced-hint-example" style="background: rgba(255, 255, 255, 0.7); border-radius: 6px; padding: 1rem; border-left: 3px solid #ffc107;">
                         <strong style="color: #856404; display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                             💻 KQL Example:
                         </strong>
@@ -824,20 +907,20 @@ function displayStackedHints() {
     
     // Add action buttons at the bottom
     hintsHTML += `
-        <div class="hint-actions" style="
+        <div class="enhanced-hint-actions" style="
             margin-top: 1.5rem; padding-top: 1.5rem; 
             border-top: 2px solid rgba(255, 193, 7, 0.3);
             display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;
         ">
-            ${currentHintLevel < maxHintsForScenario ? `
-                <button class="btn btn-warning" onclick="showNextHint()" style="
+            ${enhancedHintLevel < enhancedMaxHints ? `
+                <button class="btn btn-warning" onclick="showEnhancedNextHint()" style="
                     font-size: 0.9rem; padding: 0.65rem 1.25rem; 
                     background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
                     border: none; border-radius: 8px; color: white; font-weight: 600;
                     box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
                     transition: all 0.3s ease;
                 ">
-                    🔍 Get Next Hint (${currentHintLevel + 1}/${maxHintsForScenario})
+                    🔍 Get Next Hint (${enhancedHintLevel + 1}/${enhancedMaxHints})
                 </button>
             ` : `
                 <div style="
@@ -846,21 +929,21 @@ function displayStackedHints() {
                     font-weight: 600; font-size: 0.9rem;
                     box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
                 ">
-                    ✅ All hints revealed! You're ready to write your query.
+                    ✅ All enhanced hints revealed! You're ready to write your query.
                 </div>
             `}
             
-            <button class="btn btn-secondary" onclick="toggleHint()" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+            <button class="btn btn-secondary" onclick="toggleEnhancedHint()" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
                 ❌ Hide All Hints
             </button>
             
-            <button class="btn" onclick="showKQLWalkthrough()" style="
+            <button class="btn" onclick="showEnhancedKQLWalkthrough()" style="
                 background: linear-gradient(135deg, #2c5aa0 0%, #1e3d6f 100%);
                 color: white; border: none; border-radius: 8px;
                 font-size: 0.85rem; padding: 0.5rem 1rem; font-weight: 600;
                 box-shadow: 0 2px 8px rgba(44, 90, 160, 0.3);
             ">
-                🧠 Show KQL Walkthrough
+                🧠 Enhanced KQL Walkthrough
             </button>
         </div>
     `;
@@ -868,209 +951,145 @@ function displayStackedHints() {
     hintPanel.innerHTML = hintsHTML;
 }
 
-// Update hint button text based on current state
-function updateHintButton() {
+function updateEnhancedHintButton() {
     const hintButton = document.querySelector('button[onclick="toggleHint()"]');
     if (!hintButton) return;
+    
+    // Update button to use enhanced system
+    hintButton.setAttribute('onclick', 'toggleEnhancedHint()');
     
     const hintPanel = document.getElementById('hint-panel');
     
     if (!hintPanel.classList.contains('show')) {
         // Panel is hidden
-        if (currentHintLevel === 0) {
-            hintButton.innerHTML = `💡 Get Hint (1/${maxHintsForScenario})`;
+        if (enhancedHintLevel === 0) {
+            hintButton.innerHTML = `💡 Enhanced Hint (1/${enhancedMaxHints})`;
         } else {
-            hintButton.innerHTML = `💡 Show Hints (${currentHintLevel}/${maxHintsForScenario})`;
+            hintButton.innerHTML = `💡 Show Enhanced Hints (${enhancedHintLevel}/${enhancedMaxHints})`;
         }
     } else {
         // Panel is shown
-        hintButton.innerHTML = `💡 Hide Hints`;
+        hintButton.innerHTML = `💡 Hide Enhanced Hints`;
     }
 }
 
-// FIXED: Working KQL Walkthrough function
-function showKQLWalkthrough() {
-    console.log('🧠 showKQLWalkthrough called');
+// =============================================================================
+// NEW: Enhanced KQL Walkthrough System
+// =============================================================================
+
+function showEnhancedKQLWalkthrough() {
+    console.log('🧠 showEnhancedKQLWalkthrough called');
     
-    const scenarioData = window.dataLoader.getCurrentData();
-    
-    if (!scenarioData) {
-        showNotification('❌ No scenario data available', 'warning');
+    if (!enhancedChallengeContent || !enhancedChallengeContent.walkthrough) {
+        showNotification('❌ No enhanced walkthrough available for this challenge yet', 'warning');
         return;
     }
     
-    // For password spray specifically, create enhanced walkthrough
-    if (selectedScenario === 'password-spray') {
-        showPasswordSprayWalkthrough(scenarioData);
-    } else if (scenarioData.metadata.walkthrough) {
-        // Use scenario-specific walkthrough if available
-        const walkthrough = scenarioData.metadata.walkthrough;
-        const modal = createWalkthroughModal(walkthrough, scenarioData.solution);
-        document.body.appendChild(modal);
-        modal.style.display = 'flex';
-    } else {
-        showNotification('❌ No walkthrough available for this scenario yet', 'warning');
-    }
+    // Use the loaded walkthrough content
+    const walkthrough = enhancedChallengeContent.walkthrough;
+    const scenarioData = window.dataLoader.getCurrentData();
+    const solution = scenarioData ? scenarioData.solution : "// Solution not available";
+    
+    showEnhancedDynamicWalkthrough(walkthrough, solution);
 }
 
-// NEW: Enhanced Password Spray Walkthrough with detailed explanation
-function showPasswordSprayWalkthrough(scenarioData) {
+function showEnhancedDynamicWalkthrough(walkthrough, solution) {
     const modal = document.createElement('div');
-    modal.className = 'walkthrough-modal-overlay';
-    modal.id = 'walkthrough-modal-overlay';
+    modal.className = 'enhanced-walkthrough-modal-overlay';
+    modal.id = 'enhanced-walkthrough-modal-overlay';
+    
+    // Build challenge section
+    const challengeHTML = walkthrough.challenge ? `
+        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
+            <h3 style="color: #c62828; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🎯</span> ${walkthrough.challenge.title}
+            </h3>
+            <div style="color: #c62828; line-height: 1.6;">
+                <p><strong>${walkthrough.challenge.description}</strong></p>
+                <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                    ${walkthrough.challenge.points.map(point => `<li>${point}</li>`).join('')}
+                </ul>
+                <p><strong>🔍 Our detective work:</strong> ${walkthrough.challenge.detectiveWork}</p>
+            </div>
+        </div>
+    ` : '';
+    
+    // Build reasoning steps
+    const stepsHTML = walkthrough.reasoningSteps ? walkthrough.reasoningSteps.map(step => `
+        <div class="enhanced-reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid ${step.borderColor};">
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                <span style="background: ${step.borderColor}; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">${step.step}</span>
+                <h4 style="margin: 0; color: ${step.borderColor};">${step.title}</h4>
+            </div>
+            <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: rgba(0,0,0,0.1); padding: 0.2rem 0.4rem; border-radius: 3px;">${step.operator}</code></p>
+            <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> ${step.explanation}</p>
+            <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> ${step.detectiveInsight}</p>
+        </div>
+    `).join('') : '';
+    
+    // Build result interpretation section
+    const resultHTML = walkthrough.resultInterpretation ? `
+        <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4caf50;">
+            <h3 style="color: #2e7d32; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🎓</span> ${walkthrough.resultInterpretation.title}
+            </h3>
+            <div style="color: #2e7d32; line-height: 1.6;">
+                <p><strong>${walkthrough.resultInterpretation.description}</strong></p>
+                <ul style="margin: 1rem 0; padding-left: 1.5rem;">
+                    ${walkthrough.resultInterpretation.fields.map(field => `
+                        <li><strong>${field.field}:</strong> "${field.meaning}"</li>
+                    `).join('')}
+                </ul>
+                <p><strong>🎯 The pattern we're detecting:</strong> <em>${walkthrough.resultInterpretation.pattern}</em></p>
+            </div>
+        </div>
+    ` : '';
     
     modal.innerHTML = `
-        <div class="walkthrough-modal" style="
+        <div class="enhanced-walkthrough-modal" style="
             background: white; border-radius: 16px; padding: 2rem;
             max-width: 900px; width: 95%; max-height: 95vh; overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             animation: slideUp 0.3s ease;
         ">
             <!-- Header -->
-            <div class="walkthrough-header" style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #e9ecef; padding-bottom: 1.5rem;">
+            <div class="enhanced-walkthrough-header" style="text-align: center; margin-bottom: 2rem; border-bottom: 2px solid #e9ecef; padding-bottom: 1.5rem;">
                 <h2 style="color: #2c5aa0; margin-bottom: 0.5rem; font-size: 2rem; font-weight: 700;">
-                    🧠 Password Spray Attack: KQL Detective Work
+                    🚀 ${walkthrough.title}
                 </h2>
                 <p style="color: #666; font-size: 1.1rem; margin: 0; line-height: 1.5;">
-                    Let's understand WHY we built this query step-by-step and how each piece solves the puzzle
+                    ${walkthrough.subtitle}
                 </p>
             </div>
             
-            <!-- The Problem Section -->
-            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #ffebee; border-radius: 8px; border-left: 4px solid #f44336;">
-                <h3 style="color: #c62828; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>🎯</span> The Challenge: What Makes Password Spray Attacks Tricky?
-                </h3>
-                <div style="color: #c62828; line-height: 1.6;">
-                    <p><strong>Password spray attacks are sneaky because:</strong></p>
-                    <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-                        <li><strong>Low noise per user</strong> - Only 1-3 attempts per account (avoiding lockouts)</li>
-                        <li><strong>High user coverage</strong> - Targets 50-100+ users with common passwords</li>
-                        <li><strong>Spread over time</strong> - Can happen over hours/days to avoid detection</li>
-                        <li><strong>Mixed with legitimate traffic</strong> - Blends in with normal failed logins</li>
-                    </ul>
-                    <p><strong>🔍 Our detective work:</strong> Find patterns that show <em>1 source → many targets → systematic behavior</em></p>
-                </div>
-            </div>
+            <!-- Challenge Section -->
+            ${challengeHTML}
             
-            <!-- The Solution Query -->
+            <!-- Solution Section -->
             <div style="margin-bottom: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e9ecef;">
                 <h3 style="color: #2c5aa0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>📝</span> Our Detective Query
+                    <span>📝</span> ${walkthrough.solution ? walkthrough.solution.title : 'Enhanced Solution Query'}
                 </h3>
-                <pre style="background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 0; font-size: 0.9rem; line-height: 1.4;"><code>SigninLogs
-| where TimeGenerated > ago(24h)        // 🕐 Recent activity only
-| where ResultType != 0                 // ❌ Failed logins only  
-| summarize                            // 📊 Group and analyze
-    UniqueUsers = dcount(UserPrincipalName),    // 👥 Count unique targets
-    FailedAttempts = count(),                   // 🔢 Total attempts
-    TargetedUsers = make_set(UserPrincipalName), // 📋 List of victims
-    FirstAttempt = min(TimeGenerated),          // ⏰ Attack start
-    LastAttempt = max(TimeGenerated)            // ⏰ Attack end
-    by IPAddress, Location                      // 🌍 Group by source
-| where UniqueUsers >= 5               // ⚠️ Suspicious threshold
-| extend AttackDuration = LastAttempt - FirstAttempt,  // ⏱️ Time span
-         AverageAttemptsPerUser = FailedAttempts / UniqueUsers // 📈 Intensity
-| order by UniqueUsers desc, FailedAttempts desc       // 📊 Most suspicious first</code></pre>
+                <pre style="background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 6px; overflow-x: auto; margin: 0; font-size: 0.9rem; line-height: 1.4;"><code>${walkthrough.solution ? walkthrough.solution.query : solution}</code></pre>
             </div>
             
-            <!-- Step by Step Reasoning -->
+            <!-- Reasoning Steps -->
             <div style="margin-bottom: 2rem;">
                 <h3 style="color: #2c5aa0; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                     <span>🔍</span> Step-by-Step Detective Reasoning
                 </h3>
-                
-                <!-- Step 1 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #2c5aa0;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #2c5aa0; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">1</span>
-                        <h4 style="margin: 0; color: #2c5aa0;">Start with the Data Source</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #e3f2fd; padding: 0.2rem 0.4rem; border-radius: 3px;">SigninLogs</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> This table contains every authentication attempt - successful and failed. It's our goldmine of evidence.</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Like reviewing security camera footage - we need to see all the attempts, not just the successes.</p>
-                </div>
-                
-                <!-- Step 2 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #ff9800;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #ff9800; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">2</span>
-                        <h4 style="margin: 0; color: #ff9800;">Focus on Recent Activity</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #fff3e0; padding: 0.2rem 0.4rem; border-radius: 3px;">| where TimeGenerated > ago(24h)</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Password spray campaigns happen in concentrated timeframes. Old data dilutes our analysis.</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Fresh crime scenes have the clearest evidence. The <code>ago()</code> function is like setting the investigation timeframe.</p>
-                </div>
-                
-                <!-- Step 3 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #f44336;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #f44336; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">3</span>
-                        <h4 style="margin: 0; color: #f44336;">Filter for Suspicious Activity</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #ffebee; padding: 0.2rem 0.4rem; border-radius: 3px;">| where ResultType != 0</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Successful logins (ResultType = 0) are normal. We're hunting for patterns in the failures.</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> We're looking for "attempts" not "successes" - like studying failed break-in attempts to understand burglar patterns.</p>
-                </div>
-                
-                <!-- Step 4 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #4caf50;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #4caf50; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">4</span>
-                        <h4 style="margin: 0; color: #4caf50;">The Magic: Group by Attack Source</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #e8f5e8; padding: 0.2rem 0.4rem; border-radius: 3px;">| summarize ... by IPAddress, Location</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> This flips our perspective from "per user" to "per attacker" - revealing the spray pattern!</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> Instead of asking "who got attacked?" we ask "who is doing the attacking?" - this reveals systematic behavior.</p>
-                </div>
-                
-                <!-- Step 5 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #9c27b0;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #9c27b0; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">5</span>
-                        <h4 style="margin: 0; color: #9c27b0;">Count the Evidence</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #f3e5f5; padding: 0.2rem 0.4rem; border-radius: 3px;">UniqueUsers = dcount(UserPrincipalName)</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> <code>dcount()</code> counts unique users per IP. High numbers = spray pattern!</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> One person failing to login 50 times = locked out user. One IP attempting 50 different users = attacker!</p>
-                </div>
-                
-                <!-- Step 6 -->
-                <div class="reasoning-step" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #795548;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
-                        <span style="background: #795548; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600;">6</span>
-                        <h4 style="margin: 0; color: #795548;">Set the Trap (Threshold)</h4>
-                    </div>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>What we did:</strong> <code style="background: #efebe9; padding: 0.2rem 0.4rem; border-radius: 3px;">| where UniqueUsers >= 5</code></p>
-                    <p style="margin: 0.5rem 0; color: #333;"><strong>Why this works:</strong> Legitimate users rarely try 5+ different accounts. This filters out noise and focuses on systematic attacks.</p>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;"><strong>🎯 Detective insight:</strong> This is our "smoking gun" threshold - normal behavior vs attack behavior becomes clear.</p>
-                </div>
+                ${stepsHTML}
             </div>
             
-            <!-- What the Results Mean -->
-            <div style="margin-bottom: 2rem; padding: 1.5rem; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4caf50;">
-                <h3 style="color: #2e7d32; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>🎓</span> What Our Results Tell Us
-                </h3>
-                <div style="color: #2e7d32; line-height: 1.6;">
-                    <p><strong>When our query finds results, here's what each field reveals:</strong></p>
-                    <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-                        <li><strong>IPAddress + UniqueUsers ≥ 5:</strong> "This IP is systematically targeting multiple accounts"</li>
-                        <li><strong>FailedAttempts:</strong> "Total volume of attack attempts from this source"</li>
-                        <li><strong>TargetedUsers:</strong> "Exact list of victims - helps with incident response"</li>
-                        <li><strong>AttackDuration:</strong> "How long the campaign lasted - indicates planning"</li>
-                        <li><strong>AverageAttemptsPerUser:</strong> "Intensity per victim - shows restraint to avoid lockouts"</li>
-                    </ul>
-                    <p><strong>🎯 The pattern we're detecting:</strong> <em>Systematic, low-intensity, broad-target authentication attacks</em></p>
-                </div>
-            </div>
+            <!-- Result Interpretation -->
+            ${resultHTML}
             
             <!-- Actions -->
             <div style="text-align: center; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <button class="btn btn-primary" onclick="copyQueryToClipboard()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
-                    📋 Copy This Query
+                <button class="btn btn-primary" onclick="copyEnhancedQueryToClipboard()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                    📋 Copy Enhanced Query
                 </button>
-                <button class="btn btn-secondary" onclick="closeWalkthroughModal()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
+                <button class="btn btn-secondary" onclick="closeEnhancedWalkthroughModal()" style="padding: 0.75rem 1.5rem; font-size: 0.9rem;">
                     ✅ Got It!
                 </button>
             </div>
@@ -1089,26 +1108,24 @@ function showPasswordSprayWalkthrough(scenarioData) {
     // Add click outside to close
     modal.addEventListener('click', function(e) {
         if (e.target === modal) {
-            closeWalkthroughModal();
+            closeEnhancedWalkthroughModal();
         }
     });
 }
 
-// Close walkthrough modal
-function closeWalkthroughModal() {
-    const modal = document.getElementById('walkthrough-modal-overlay');
+function closeEnhancedWalkthroughModal() {
+    const modal = document.getElementById('enhanced-walkthrough-modal-overlay');
     if (modal) {
         modal.remove();
     }
-    console.log('✅ Walkthrough modal closed');
+    console.log('✅ Enhanced walkthrough modal closed');
 }
 
-// Copy query to clipboard
-function copyQueryToClipboard() {
+function copyEnhancedQueryToClipboard() {
     const scenarioData = window.dataLoader.getCurrentData();
     if (scenarioData && scenarioData.solution) {
         navigator.clipboard.writeText(scenarioData.solution).then(() => {
-            showNotification('📋 Query copied to clipboard!', 'success');
+            showNotification('📋 Enhanced query copied to clipboard!', 'success');
         }).catch(() => {
             // Fallback for older browsers
             const textArea = document.createElement('textarea');
@@ -1117,18 +1134,99 @@ function copyQueryToClipboard() {
             textArea.select();
             document.execCommand('copy');
             document.body.removeChild(textArea);
-            showNotification('📋 Query copied to clipboard!', 'success');
+            showNotification('📋 Enhanced query copied to clipboard!', 'success');
         });
     }
 }
 
-// Add hint glow animation to CSS
-const hintStyles = document.createElement('style');
-hintStyles.textContent = `
-    @keyframes hintGlow {
-        0% { transform: translateX(-5px); box-shadow: 0 0 0 rgba(255, 193, 7, 0); }
-        50% { transform: translateX(0); box-shadow: 0 4px 16px rgba(255, 193, 7, 0.3); }
-        100% { transform: translateX(0); box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2); }
+// =============================================================================
+// NEW: Enhanced System Integration
+// =============================================================================
+
+// Override existing selectScenario to use enhanced system
+const originalSelectScenario = window.selectScenario || selectScenario;
+function selectScenarioEnhanced(scenarioId) {
+    // Remove previous selection
+    document.querySelectorAll('.attack-path').forEach(path => {
+        path.classList.remove('selected');
+    });
+    
+    // Add selection to clicked scenario
+    event.target.closest('.attack-path').classList.add('selected');
+    
+    selectedScenario = scenarioId;
+    
+    // Use enhanced loading system
+    if (useEnhancedSystem) {
+        loadEnhancedScenario(scenarioId);
+    } else {
+        originalSelectScenario(scenarioId);
+    }
+    
+    // Switch to challenge view
+    document.getElementById('overview-panel').style.display = 'none';
+    document.getElementById('challenge-panel').classList.add('active');
+    
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+        toggleSidebar();
+    }
+}
+
+// =============================================================================
+// NEW: Enhanced System CSS
+// =============================================================================
+
+const enhancedStyles = document.createElement('style');
+enhancedStyles.textContent = `
+    @keyframes enhancedHintGlow {
+        0% { transform: translateX(-5px); box-shadow: 0 0 0 rgba(76, 175, 80, 0); }
+        50% { transform: translateX(0); box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3); }
+        100% { transform: translateX(0); box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2); }
+    }
+    
+    .enhanced-hint-latest {
+        box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2) !important;
+    }
+    
+    .enhanced-reasoning-step:hover {
+        transform: translateX(4px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
     }
 `;
-document.head.appendChild(hintStyles);
+document.head.appendChild(enhancedStyles);
+
+// =============================================================================
+// NEW: Enhanced System Toggle Controls (for easy testing)
+// =============================================================================
+
+function enableEnhancedSystem() {
+    useEnhancedSystem = true;
+    console.log('🚀 Enhanced system enabled');
+    showNotification('🚀 Enhanced system enabled!', 'success');
+}
+
+function disableEnhancedSystem() {
+    useEnhancedSystem = false;
+    console.log('⚠️ Enhanced system disabled - using original');
+    showNotification('⚠️ Using original system', 'warning');
+}
+
+// Auto-enable enhanced system on page load
+document.addEventListener('DOMContentLoaded', function() {
+    if (useEnhancedSystem) {
+        console.log('🚀 Enhanced Challenge System loaded and ready!');
+        
+        // Override the selectScenario function globally
+        window.selectScenario = selectScenarioEnhanced;
+        
+        console.log('💡 To test: selectScenario("password-spray") will use enhanced system');
+        console.log('🔧 To disable: call disableEnhancedSystem()');
+        console.log('🔧 To enable: call enableEnhancedSystem()');
+    }
+});
+
+// =============================================================================
+// END: Enhanced Challenge System
+// =============================================================================
